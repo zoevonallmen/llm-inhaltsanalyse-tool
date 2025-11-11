@@ -1,0 +1,23 @@
+---
+title: "Research Design (Kurzüberblick) "
+format: pdf
+---
+
+> **Ziel** ist es, ein einfach nutzbares Tool zu entwickeln, dass den Einsatz von LLMs für Inhaltsanalysen erleichtert und systematischer macht. Die Idee entstand aus der praktischen Erfahrung, dass bei bisherigen Analysen viel Zeit in die manuelle Anbindung von APIs und die wiederholte Anpassung von Prompts investiert werden musste, um stabile Ergebnisse zu erreichen. Das Tool soll den Prozess vereinfachen, indem es den Datenimport und die Verbindung zu den LLMs übernimmt, das Erstellen und Testen von Prompts unterstützt und die Codierung und Auswertung in einer Anwendung zusammenführt. Ergänzend kann untersucht werden, wie der Einsatz von RAGs die Qualität/Nachvollziehbarkeit der Ergebnisse verbessert.
+>
+> **Aufbau:** Ich habe mir vorgestellt, dass es eher ein experimenteller Aufbau ist, beidem verschiedene Versionen des Tools miteinander verglichen werden sollen. Zur Evaluation des Tools würde ein eigener Datensatz genutzt werden, wenn möglich, derselbe, der bereits in meiner vorherigen Arbeit eingesetzt wurde (Medienartikel und Framing-Kategorien zum Thema Immigration), da so der zusätzliche Aufwand etwas reduziert würde. Um die Übereinstimmung und Stabilität zu beurteilen, können die Codierungen des LLMs mit einer vorhandenen manuellen Codierung verglichen werden.\
+> Der Import des eigenen Datensatzes und Kategoriensystems dient dabei nur der Evaluation des Tools. Grundsätzlich soll das Tool jedoch so gestaltet sein, dass auch andere Datensätze und Kategoriensysteme eingebunden und werden können, um eigenständige Inhaltsanalysen durchzuführen. Backend-Logik/Hauptfunktionen: Das Tool soll eine dokumentierte und reproduzierbare Arbeitsweise ermöglichen. Folgende Kernfunktionen sind, basierend auf dem Ziel der Arbeit, geplant:
+
+1.  Daten-Import: Upload eigener Datensätze, Auswahl relevanter Spalten (z.B. ID, Text, ...)
+
+2.  «Codebuch-Editor»: Möglichkeit, eigene Kategoriensysteme anzulegen, zu speichern, oder zu importieren.
+
+3.  Prompt-Engine: Unterstützung beim Erstellen und Testen von Prompts (aufgrund vergangener Arbeit bspw. Few-Shot/Chain-of-Thought)
+
+4.  RAG: Um Genauigkeit und Nachvollziehbarkeit der Codierung zu verbessern (optional könnten auch Ergebnisse mit und ohne RAG verglichen werden)
+
+5.  Codierungen durchführen: Durchführung der Codierung über den gesamten Datensatz (Durchläufe protokollieren für die Nachvollziehbarkeit und Reproduzierbarkeit)
+
+6.  Evaluation: Zur Validierung wäre es evtl. sinnvoll, eine eigene manuelle Codierung hochzuladen und direkt mit den LLM-Ergebnissen zu vergleichen (diese Funktion ist nicht unbedingt notwendig, da der Vergleich auch extern mit den exportierten Ergebnissen durchführbar ist, aber es wäre hilfreich, um die Prompt-Versionen direkt im Tool gegenüberzustellen)
+
+7.  Reporting und Export: Zusammenführung aller Ergebnisse und Prompts, Export der Dateien.

@@ -1,0 +1,138 @@
+---
+title: "Konzept Tool zur LLM-gestützten Inhaltsanalyse"
+format: pdf
+---
+
+# **Ausgangslage zur Nutzung von LLMs zur Inhaltsanalyse/qualitativem Coding in der soziologischen/sozialwissenschaftlchen Forschung**
+
+### Potenziale für die Nutzung von LLMs
+
+-   Massive und feingranulare Informationsgewinnung; hohe Präzision
+
+-   Skalierbarkeit & Effizienz (Geschwindigkeit, Genauigkeit, keine "Ermüdungseffekte"
+
+-   Zugänglichkeit & Flexibilität
+
+-   Transparenz & Replizierbarkeit
+
+### Risiken aktuell
+
+-   Voreingenommenheit und Stereotypen von LLMs reproduzieren
+
+-   Systematische, nicht-zufällige Fehler und Verzerrungen
+
+-   Ethische & soziale Implikationen
+
+-   Mangelndes inhaltliches Verständnis von LLMs
+
+### Aktuelle Herausforderungen bei der Umsetzung
+
+-   Methodologische Reflexivität & Validierung
+
+-   Prompt-Engineering: manuelle Anpassung von Prompts notwendig, aber Prompts können auf unzählige Weisen angepasst werden, wann soll man Prompt-Engineering stoppen, wann ist Leistungsgrenze des Modells erreicht?
+
+-   Technische Anforderungen & Kosten; Unvorhersehbares Modellverhalten
+
+## Ansatz für diese Herausforderungen:
+
+Farjam, M., Meyer, H., & Lohkamp, M. (2025). A Practical Guide and Case Study on How to Instruct LLMs for Automated Coding During Content Analysis. Social Science Computer Review, 0(0). <https://doi.org/10.1177/08944393251349541>
+
+Pipeline für kontinuierliche Selbstverbesserung von Klassifikationsproblemen. Human-in-the-Loop Ansatz; menschlicher "Vermittler"; LLM in drei "Task-Rollen" aufgebrochen
+
+Ansatz integriert verschiedene Strategien, um aktuelle Herausforderungen zu verbessern:
+
+"Agentic Workflow": LLMs als "spezialisierte Agenten" einsetzen, um Inhaltsanalyse zu automatisieren, validieren und optimieren. Der Prozess gliedert das LLM in drei Agenten, ergänzt von einer menschlichen Kontrollinstanz:
+
+-   Human Intermediary: Zuständig für Definition & Validierung, stellt anfängliche Anweisungen bereit, verfeinert die Prompts, basierend auf LLM-Ausgabe.
+
+-   Instructor (LLM): Prompt-Optimierung (Meta-Prompting): Nimmt menschliche Anweisungen entgegen und formuliert diese in eine optimierte, strukturierte Prompt für de Classifier um
+
+-   Classifier (LLM): Führt Klassifikation/eigentliche Codierungsaufgabe für jedes Dokument durch, liefert explizite Chain of Thought Begründung
+
+-   Judge (LLM; optional): Für Konfliktlösung und Zuverlässigkeit, könnte optional aktiviert werden, wenn die Klassifizierungszuverlässigkeit niedrig ist; Judge entscheidet bei widersprüchlichen Codierungen (aus mehreren Läufen), basierend auf kohärentester CoT Begründung
+
+**Agentic Workflow zielt darauf ab, zentrale Probleme der LLM_Nutzung zu adressieren:**
+
+-   Mangelnde Systematik im Prompt-Engineering: Instructor nutzt Meta-Prmpting (LLM übersetzt Anweisungen in LLM-optimierte Prompt), zerlegt komplexe Codierungsschemata in handhabbare Unteraufgaben. Das soll die Struktur und Leistung erhöhen.
+
+-   Intransparenz, LLM als "Black Box": Classifier muss CoT Reasoning liefern, das soll Transparenz der Klassifikationsentscheidung erhöhen und Validierung und Prompt-Optimierung erleichtern
+
+-   Bias und Validitätsbedenken: Human Intermediary für methodologische Strenge, durch kontinuierliche Verfeinerung der Prompt und Überprüfung der LLM-Begründung können Fehlinterpretationen und insbes. systematische Fehler erkannt und korrigiert werden
+
+## Vorschlag zur Integration des Agentic Wokflow ins Tool
+
+### Grundidee:
+
+Tool als gesamten Arbeitsprozess der LLM-gestützten Inhaltsanalyse als mehrstufiger Ablauf. Orientiert am Agentic Workflow, und den Rollen Human Intermediary, Instructor, Classifier (optional Judge), um aktuelle Herausforderungen anzusprechen, menschliche Kontrolle zu integrieren und insbesondere die mangelnde Systematik von Prompt-Engineering anzugehen.
+
+### Struktur:
+
+1.  Aufgaben- und Materialdefinition (Human Intermediary)
+
+    Upload Datensatz, Eingabe oder Upload Kategoriensystem/Codebuch, Beschreibung der Codieraufgabe (in natürlicher Sprache)
+
+2.  Instructor (Prompt-Generierung)
+
+    LLM erstellt auf dieser Basis einen ersten Promptvorschlag für die Codierung, Anzeige des Promptvorschlages, manuelle Anpassung durch Nutzerin möglich, Speicherung und/oder Versionerung der Prompt-Versionen
+
+3.  Subsample Codierung (Classifier)
+
+    Auswahl eines Test-Subsamples, Durchführung der Codierung mit der aktuellen Prompt, Anzeige der Ergebnisse inkl. Begründung, Möglichkeit zum Vergleich mit manueller Codierung
+
+4.  Iterative Optimierung
+
+    Möglichkeit zur Beschreibung des Problems für den Instructor, Rückführung dieses Feedbacks an den Instructor, automatische Optimierung der Prompt
+
+5.  Finale Codierung
+
+    Durchführung der Codierung des gesamten Datensatzes (sobald zufrieden mit Prompt)
+
+6.  Optional: Judge
+
+    Wäre aktivierbar bei widersprüchlichen oder unsicheren Ergebnissen; Entscheidung zwischen mehreren Codierungen auf Basis der Begründungen
+
+### Modellauswahl
+
+**Generell aus der Literatur:**
+
+-   Open-Source Modelle für Transparenz und Replizierbarkeit
+
+-   Grössere Modelle führen Klassifikationsaufgaben für komplexere Konzepte besser durch
+
+-   Für Prompt-basierte Aufgaben sind Modelle am besten geeignet, die fein abgestimmt wurden, um Anweisungen zu befolgen (instruct-Versionen)
+
+**Für Agentic Workflow (Farjam et al.)**
+
+-   Zusätzliche Anforderung: Konsistenz zwischen den Agenten
+
+-   Instructor und Classifier sollten dieselbe Version des LLMs verwenden, sodass die vom Instructor generierten Anweisungen optimal auf die Fähigkeiten des Classifiers abgestimmt sind.
+
+(+Mehrsprachigkeit?)
+
+**Modellvorschlag HuggingFace**
+
+meta-llama/Llama-3.1-8B-Instruct (<https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct>)
+
+-   Instruction-tuned Textgenerierungsmodell, gut für komplexe Anweisungen/wechselnde Kategoriensysteme & wechselnde Rollen (Instructor, Classifier)
+
+-   Englisch, unterstützt Deutsch
+
+-   Kosten(?)
+
+## Fragen
+
+-   Ist diese Integration eines Agent Workflow sinnvoll und machbar? Evtl. ohne Judge, wenn das zu viel wird (kann ich nicht so gut abschätzen)
+
+-   Modell: Ist ein Instruct Modell sinnvoll? Generelles Feedback zum vorgeschlagenen Modell?
+
+## Literatur
+
+Davidson, T., & Karell, D. (2025). Integrating Generative Artificial Intelligence into Social Science Research: Measurement, Prompting, and Simulation. Sociological Methods & Research, 54(3), 775-793. <https://doi.org/10.1177/00491241251339184>
+
+Farjam, M., Meyer, H., & Lohkamp, M. (2025). A Practical Guide and Case Study on How to Instruct LLMs for Automated Coding During Content Analysis. Social Science Computer Review,0(0).<https://doi.org/10.1177/08944393251349541>
+
+Mützel, Sophie, and Étienne Ollion, 'Machine Learning and the Analysis of Culture', in Christian Borch, and Juan Pablo Pardo-Guerra (eds), The Oxford Handbook of the Sociology of Machine Learning, Oxford Handbooks (2025; online edn, Oxford Academic, 20 Nov. 2023), <https://doi.org/10.1093/oxfordhb/9780197653609.013.39>
+
+Stuhler, O., Ton, C. D., & Ollion, E. (2025). From Codebooks to Promptbooks: Extracting Information from Text with Generative Large Language Models. Sociological Methods & Research, 54(3), 794-848. <https://doi.org/10.1177/00491241251336794>
+
+Than, N., Fan, L., Law, T., Nelson, L. K., & McCall, L. (2025). Updating “The Future of Coding”: Qualitative Coding with Generative Large Language Models. Sociological Methods & Research, 54(3), 849-888. <https://doi.org/10.1177/00491241251339188>

@@ -119,11 +119,21 @@ meta-llama/Llama-3.1-8B-Instruct (<https://huggingface.co/meta-llama/Llama-3.1-8
 
 -   Kosten(?)
 
+Im Free Tier sind diese vernachlässigbar. Sie werden allerdings durch Performace-Einbußen "erkauft". So gesehen fallen temporale Kosten and. Da gerade die llama Modelle alle auch lokal laufen, kann das -- je nach Hardware -- eine weitere (gerade für sozialwissenschaftliche Zwecke sehr wichtige) datenschutzrechtlich sensible Umsetzung möglich machen. Das können wir gerne weiter besprechen, sofern gewünscht.
+
 ## Fragen
 
 -   Ist diese Integration eines Agent Workflow sinnvoll und machbar? Evtl. ohne Judge, wenn das zu viel wird (kann ich nicht so gut abschätzen)
 
+Ja, das sollte realierbar sein. Die genaue Architektur müssen wir besprechen und erpoben. Grundlegende Hürden sehe ich aber nicht.
+
 -   Modell: Ist ein Instruct Modell sinnvoll? Generelles Feedback zum vorgeschlagenen Modell?
+
+Erproben würde ich das unbedingt und denke, dass es durchaus sinnvoll ist. Die Frage ist, ob es mit unseren Ressourcen performnat zusammenspielen wird. Das von Ihnen vorgeschlagene Modell finde ich gut und sehr passend. De Meta Modelle dürften dank dem offenen Ansatz generell passend sein und in diesem Zusamenhang insbesondere. Da das Modell auch Deutsch unterstützt, zumindest von der Beschreibung her, denke ich, dass wir damit arbeiten können.
+
+### Generelle Antwort
+
+Ich finde Ihre Konkretisierung hilfreich und zielführend. Den *Agentic Workflow* Anatz finde ich spannend und ich denke, dass er Ihrem Vorhaben einen roten Faden verleiht. Bleiben Sie dabei weietrhin kreativ-kritisch und weichen Sie bei Bedarf von den Voreshlägen für die Umsetzung -- mehr sind es im Grunde ja nicht -- gerne ab. Insgesamt freue ich mich auf Ihre Realisierung, bei der ich Sie gerne unterstütze.
 
 ## Literatur
 

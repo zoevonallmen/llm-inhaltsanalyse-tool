@@ -69,27 +69,55 @@ Tool als gesamten Arbeitsprozess der LLM-gestützten Inhaltsanalyse als mehrstuf
 
 1.  Aufgaben- und Materialdefinition (Human Intermediary)
 
-    Upload Datensatz, Eingabe oder Upload Kategoriensystem/Codebuch, Beschreibung der Codieraufgabe (in natürlicher Sprache)
+-   Datensatz: File Input (z.B. CSV), zum Laden der Dateien
 
-2.  Instructor (Prompt-Generierung)
+-   Kategoriensystem/Codebuch: Text Input (Beschreibung der Kategorien) oder File Input (Uploas Codebuch), der Text der Codieranweisung wird gespeichert (als Input für den Instructor)
 
-    LLM erstellt auf dieser Basis einen ersten Promptvorschlag für die Codierung, Anzeige des Promptvorschlages, manuelle Anpassung durch Nutzerin möglich, Speicherung und/oder Versionerung der Prompt-Versionen
+-   Codieraufgabe: Text Input (Beschreibung der Aufgabe), ergänzt die Kategoriesystemeingabe (als Input für den Instructor) \|
+
+2.  Instructor: Prompt-Generierung
+
+-   LLM erstellt auf dieser Basis einen ersten Promptvorschlag für die Codierung, Anzeige des Promptvorschlages, manuelle Anpassung durch Nutzerin möglich, Speicherung und/oder Versionerung der Prompt-Versionen.
+
+-   System-Prompt: Modus zur Prompt-Generierung mit Instruktion als "Prompt-Designer"
+
+-   User-Input: Kategoriesystem/Codebook, Codieraufgabe, Strukturanforderung (definiert von Human Intermediary). Wird als User-Prompt dem Modell übergeben.
+
+-   Output: Der generierte Prompt-Text (V01). Das Ergebnis wird in der Benutzeroberfläche ausgegeben und gespeichert (Versionierung).
 
 3.  Subsample Codierung (Classifier)
 
-    Auswahl eines Test-Subsamples, Durchführung der Codierung mit der aktuellen Prompt, Anzeige der Ergebnisse inkl. Begründung, Möglichkeit zum Vergleich mit manueller Codierung
+-   Classifier führt Codierung eines Teils der Daten durch
+
+-   Testsample: Auswahl einer zufälligen Stichprobe (N=?) aus dem Datensatz.
+
+-   Prompt-Übergabe: Übergabe der aktuellsten Prompt und des Dokumentenextes an den Classifier.
+
+-   Output-Parsing: Datenextraktion: Finale Codierung und Begründung (CoT)
+
+-   Anzeige der Ergebnisse: Tabelle mit Originaltext, LLM-Codierung und CoT-Begründung
 
 4.  Iterative Optimierung
 
-    Möglichkeit zur Beschreibung des Problems für den Instructor, Rückführung dieses Feedbacks an den Instructor, automatische Optimierung der Prompt
+-   Human Intermediary, Möglichkeit zur Beschreibung des Problems für den Instructor, Rückführung dieses Feedbacks an den Instructor, automatische Optimierung der Prompt
+
+-   Feedback-Input: Text Input für die Problembeschreibung und Korrekturanweisung. Dies bildet den User-Input für den Instructor im Prompt-Optimierungsmodus
+
+-   Instructor-Aufruf: Modus zur Prompt-Optimierung: Aufruf mit der letzten Prompt-Version und menschlichem Feedback, System-Prompt zur Prompt-Optimierung
+
+-   Output: Neue, optimierte Prompt wird generiert und in der Benutzeroberfläche angezeit und als nächste Version gespeichert.
 
 5.  Finale Codierung
 
-    Durchführung der Codierung des gesamten Datensatzes (sobald zufrieden mit Prompt)
+-   Durchführung der Codierung des gesamten Datensatzes
+
+-   Batch-Prozess: Button zum Ausführen des Classifiers mit der letzten Prompt über den gesamten Datensatz
+
+-   Ergebnisspeicherung: Speichern der finalen Codierungen und aller CoT-Begründungen
 
 6.  Optional: Judge
 
-    Wäre aktivierbar bei widersprüchlichen oder unsicheren Ergebnissen; Entscheidung zwischen mehreren Codierungen auf Basis der Begründungen
+-   Wäre aktivierbar bei widersprüchlichen oder unsicheren Ergebnissen; Entscheidung zwischen mehreren Codierungen auf Basis der Begründungen
 
 ### Modellauswahl
 

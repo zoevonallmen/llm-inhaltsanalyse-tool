@@ -73,7 +73,7 @@ Tool als gesamten Arbeitsprozess der LLM-gestützten Inhaltsanalyse als mehrstuf
 
 -   Kategoriensystem/Codebuch: Text Input (Beschreibung der Kategorien) oder File Input (Uploas Codebuch), der Text der Codieranweisung wird gespeichert (als Input für den Instructor)
 
--   Codieraufgabe: Text Input (Beschreibung der Aufgabe), ergänzt die Kategoriesystemeingabe (als Input für den Instructor) \|
+-   Codieraufgabe: Text Input (Beschreibung der Aufgabe), ergänzt die Kategoriesystemeingabe (als Input für den Instructor)
 
 2.  Instructor: Prompt-Generierung
 

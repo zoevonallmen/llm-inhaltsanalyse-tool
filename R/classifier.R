@@ -11,3 +11,24 @@ hf_model <- ellmer::chat_huggingface(
   ),
   model = LLAMA_MODEL,
 )
+
+# Classifier  ----------------------------------------------------------------
+
+
+classifier <- function(article_text, prompt, chat_object = hf_model){
+  
+  user_prompt <- paste(prompt, "\n\n--- Dokument zur Codierung ---\n", article_text)
+
+  response <- chat_object(
+    message = user_prompt,
+    echo = FALSE
+  )
+  
+  raw_response <- response$content
+  
+  return(list(
+    status = "raw_output",
+    content = raw_output
+  )) 
+  
+}

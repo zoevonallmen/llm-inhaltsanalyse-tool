@@ -14,4 +14,16 @@ raw_response_list <- classifier(
   chat_object = hf_model
 )
 
-print(raw_response_list$content)
+print(raw_response_list$success)
+print(raw_response_list$code)
+print(raw_response_list$reasoning)
+
+# Output: 
+# > print(raw_response_list$success)
+# [1] TRUE
+# > print(raw_response_list$code)
+# [1] "Politik"
+# > print(raw_response_list$reasoning)
+# [1] "Der Text handelt von einem Gesetzesentwurf der Bundesregierung, der sich mit der Förderung der Kreislaufwirtschaft beschäftigt. Dies ist ein Politikthema, da es sich um eine Maßnahme der Regierung handelt, die darauf abzielt, die Recyclingquoten zu erhöhen und die Industrie zu verpflichten, mehr recycelte Materialien zu verwenden."
+
+# (Funktioniert, Aber vorher Code = Soziales, jetzt Politik)

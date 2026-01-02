@@ -1,6 +1,5 @@
 # Load Libraries ---------------------------------------------------------------
 library(ellmer)
-library(stringr)
 library(jsonlite)
 
 # Initialize Model -------------------------------------------------------------
@@ -18,6 +17,33 @@ hf_model <- ellmer::chat_huggingface(
   echo = "none"
 )
 
+
+#Helper Function (extract_json)-------------------------------------------------
+
+library(stringr)
+
+extract_json <- function(x) {
+  if (is.null(x) || length(x) == 0) return(NULL)
+  
+  x <- as.character(x)[1]
+  
+  # Fall 1: JSON in ```json ... ```
+  m <- str_match(x, "```(?:json)?\\s*([\\s\\S]*?)\\s*```")
+  if (!is.na(m[1,2])) {
+    return(str_trim(m[1,2]))
+  }
+  
+  # Fall 2: JSON irgendwo im Text
+  start <- str_locate(x, fixed("{"))[1]
+  ends  <- str_locate_all(x, fixed("}"))[[1]]
+  
+  if (is.na(start) || nrow(ends) == 0) return(NULL)
+  
+  end <- ends[nrow(ends), "end"]
+  
+  str_trim(substr(x, start, end))
+}
+
 # Classifier Function ----------------------------------------------------------
 
 classifier <- function(article_text, prompt, chat_object = hf_model){
@@ -28,9 +54,8 @@ classifier <- function(article_text, prompt, chat_object = hf_model){
     article_text
   )
 
-  raw_response <- chat_object$chat(
-    user_prompt,
-  )
+  raw_response <- chat_object$chat(user_prompt, echo = "none")
+  
   
   parsed <- tryCatch(
     {
@@ -39,23 +64,43 @@ classifier <- function(article_text, prompt, chat_object = hf_model){
     error = function(e) {
       NULL
     }
-  )
+   )
+  
+  json_used <- raw_response
+  
+  if (is.null(parsed)) {
+    json_candidate <- extract_json(raw_response)
+    
+    if (!is.null(json_candidate)) {
+      parsed <- tryCatch(
+        jsonlite::fromJSON(json_candidate),
+        error = function(e) NULL
+      )
+      json_used <- json_candidate
+    }
+  }
+  
   
   if (is.null(parsed)) {
     return(list(
       success   = FALSE,
-      code      = NA_character_,
-      reasoning = NA_character_
+      code      = NA,
+      reasoning = NA,
+      raw = raw_response,
+      json = NA,
+      error = "JSON parsing failed"
     ))
   }
   
-  code      <- parsed$code
-  reasoning <- parsed$reasoning
-  
-  return(list(
+  list(
     success   = TRUE,
-    code      = as.character(code),#für aktuelles bsp ja, sonst evtl numerischer wert/zahl; muss ich definieren?
-    reasoning = as.character(reasoning)
-  ))
-  
+    code      = parsed$code,
+    reasoning = parsed$reasoning,
+    raw       = raw_response,
+    json      = json_used, 
+    error     = NULL
+  )
 }
+
+
+  

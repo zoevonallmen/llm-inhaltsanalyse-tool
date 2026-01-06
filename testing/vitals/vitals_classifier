@@ -79,6 +79,9 @@ LOOP: 10 Artikel (5 kurz, 5 lang) --> Error 400; Tokenmax. überschritten...
 -> hf_model für jeden Artikel neu initialisieren => funktioniert mit kurzer Prompt, auch im JSON Format und Code bleibt gleich/Reasoning ist stabil (ist das eine "stabile"" Lösung?? oder Problem für Modell)
 
 bei Loop & lange Prompt: Error in `req_perform()`: ! HTTP 504 Gateway Timeout. -> retry?
+Retry & sys.sleep; funktioniert. 
+Ergebnisse Loop x lange Prompt:
+Format stimmt, wird korrekt extrahiert. Kurzer Artikel: Code und Begründung bleibt gleich wie bei den vorherigen Versuchen; langer Artikel: anderer Code... aber Begrüdnung ist verständlich; nichts Halluziniert. => grundsätzlich ok; kann man über Prompt Engineering verbessern würd ich sagen...
 
 
-sollte ich noch etwas einbauen womit Artikel getrennt werden können, wenn sie zu gross sind?
+Sollte ich noch etwas einbauen womit Artikel getrennt werden können, wenn sie zu gross sind? Oder doch nicht weils jetzt funktioniert?

@@ -11,8 +11,7 @@ hf_model <- ellmer::chat_huggingface(
   model = LLAMA_MODEL,
   credentials = function() API_KEY,
   params = list(
-    temperature = 0.0,#?
-    max_new_tokens = 300 #?
+    temperature = 0.0#?
   ),
   echo = "none"
 )
@@ -44,27 +43,26 @@ extract_json <- function(x) {
 
 # Classifier Function ----------------------------------------------------------
 
-classifier <- function(article_text, prompt, chat_object = hf_model){
+classifier <- function(article_text, prompt, chat_object = hf_model,
+                       max_attempts = 3, sleep_sec = 5){ #weiss nicht wieviel von beidem sinvoll ist, muss geprüft werden!!!
   
+ attempt <- 1
+ while(attempt <= max_attempts) {
+   
   user_prompt <- paste0(
     prompt, 
     "\n\n--- Dokument zur Codierung ---\n", 
     article_text
   )
 
-  raw_response <- chat_object$chat(user_prompt, echo = "none")
+  raw_response <- tryCatch({
+    chat_object$chat(user_prompt, echo = "none")
+  }, error = function(e) e)
   
-  
-  parsed <- tryCatch(
-    {
-      jsonlite::fromJSON(raw_response)
-    },
-    error = function(e) {
-      NULL
-    }
-   )
-  
-  json_used <- raw_response
+  if(!inherits(raw_response, "error")) {
+   
+    parsed <- tryCatch(jsonlite::fromJSON(raw_response), error = function(e) NULL)
+    json_used <- raw_response
   
   if (is.null(parsed)) {
     json_candidate <- extract_json(raw_response)
@@ -88,16 +86,33 @@ classifier <- function(article_text, prompt, chat_object = hf_model){
       json = NA,
       error = "JSON parsing failed"
     ))
-  }
-  
-  list(
+  } else {
+    return(list(
     success   = TRUE,
     code      = parsed$code,
     reasoning = parsed$reasoning,
     raw       = raw_response,
     json      = json_used, 
     error     = NULL
-  )
+  ))
+  }
+
+  } else {
+    
+    message(paste0("Fehler", attempt, "/", max_attempts, ". Retry in ", sleep_sec, " Sekunden"))
+    Sys.sleep(sleep_sec)
+    attempt <- attempt + 1
+  }
+ }
+ 
+ list (
+   success   = FALSE,
+   code      = NA,
+   reasoning = NA,
+   raw       = NA,
+   json      = NA,
+   error     = "Max attempts reached without success"
+ )
 }
 
 

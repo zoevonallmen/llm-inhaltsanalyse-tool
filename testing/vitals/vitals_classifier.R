@@ -50,9 +50,20 @@ artikel_für_loop <- list(
 
 loop_results <- lapply(seq_along(artikel_für_loop), function(i) {
   
+  hf_model <- ellmer::chat_huggingface(
+    system_prompt = "Du bist der Classifier. Deine Aufgabe ist die strikte Anwendung des Codierschemas. Antworte IMMER im JSON-Format mit den Feldern 'code' und 'reasoning'.",  #system-prompt noch überarbeiten/begründen; und DE or EN?
+    model = LLAMA_MODEL,
+    credentials = function() API_KEY,
+    params = list(
+      temperature = 0.0,#?
+      max_new_tokens = 300 #?
+    ),
+    echo = "none"
+  ) #aus Classifier.R kopiert; hf_model für jeden Artikel neu initialisieren...
+  
   res <- classifier(
     article_text = artikel_für_loop[[i]],
-    prompt = prompt_short,
+    prompt = prompt_long,
     chat_object = hf_model
   )
   
@@ -66,6 +77,9 @@ loop_results <- lapply(seq_along(artikel_für_loop), function(i) {
     error      = res$error
   )
 })
+
+
+
 
 loop_df <- bind_rows(loop_results)
 

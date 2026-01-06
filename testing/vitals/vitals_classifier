@@ -76,3 +76,9 @@ Problem: Wenn ich das Environment zwischen den Läufen nicht lösche, funktionie
 
 
 LOOP: 10 Artikel (5 kurz, 5 lang) --> Error 400; Tokenmax. überschritten...
+-> hf_model für jeden Artikel neu initialisieren => funktioniert mit kurzer Prompt, auch im JSON Format und Code bleibt gleich/Reasoning ist stabil (ist das eine "stabile"" Lösung?? oder Problem für Modell)
+
+bei Loop & lange Prompt: Error in `req_perform()`: ! HTTP 504 Gateway Timeout. -> retry?
+
+
+sollte ich noch etwas einbauen womit Artikel getrennt werden können, wenn sie zu gross sind?

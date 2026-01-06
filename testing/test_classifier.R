@@ -33,27 +33,3 @@ print(response$reasoning)
 print(response$raw)
 print(response$json)
 print(response$error)
-
-# > print(response$success)
-# [1] TRUE
-# > print(response$code)
-# [1] "Wirtschaftlicher Nutzen"
-# > print(response$reasoning)
-# [1] "Der Artikel stellt Einwanderung als wirtschaftlich vorteilhaft dar, indem er betont, dass die Schweiz die Zuwanderung wieder eigenständig steuern können muss, um das Wachstum der Schweizer Wirtschaft zu fördern. Peter Föhn argumentiert, dass die Schweiz die Personenfreizügigkeit mit der EU nachverhandeln muss, um die wirtschaftlichen Vorteile der Einwanderung zu nutzen. Dies deutet darauf hin, dass der Artikel den Frame 'Wirtschaftlicher Nutzen' verwendet, um Einwanderung zu präsentieren."
-# > print(response$raw)
-# ```json
-# {
-#   "code": "Wirtschaftlicher Nutzen",
-#   "reasoning": "Der Artikel stellt Einwanderung als wirtschaftlich 
-# vorteilhaft dar, indem er betont, dass die Schweiz die Zuwanderung wieder 
-# eigenständig steuern können muss, um das Wachstum der Schweizer Wirtschaft zu
-# fördern. Peter Föhn argumentiert, dass die Schweiz die Personenfreizügigkeit 
-# mit der EU nachverhandeln muss, um die wirtschaftlichen Vorteile der 
-# Einwanderung zu nutzen. Dies deutet darauf hin, dass der Artikel den Frame 
-# 'Wirtschaftlicher Nutzen' verwendet, um Einwanderung zu präsentieren."
-# }
-# ```
-# > print(response$json)
-# [1] "{\n  \"code\": \"Wirtschaftlicher Nutzen\",\n  \"reasoning\": \"Der Artikel stellt Einwanderung als wirtschaftlich vorteilhaft dar, indem er betont, dass die Schweiz die Zuwanderung wieder eigenständig steuern können muss, um das Wachstum der Schweizer Wirtschaft zu fördern. Peter Föhn argumentiert, dass die Schweiz die Personenfreizügigkeit mit der EU nachverhandeln muss, um die wirtschaftlichen Vorteile der Einwanderung zu nutzen. Dies deutet darauf hin, dass der Artikel den Frame 'Wirtschaftlicher Nutzen' verwendet, um Einwanderung zu präsentieren.\"\n}"
-# > print(response$error)
-# NULL

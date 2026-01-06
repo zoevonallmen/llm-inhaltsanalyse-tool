@@ -1,4 +1,5 @@
-Erklärung zum Vorgehen: 
+Ausgangslage: Erklärung zum Vorgehen: 
+-------------------------------------
 
 Zu diesem Zeitpunkt: Ist das Modell (meta-llama/Llama-3.1-8B-Instruct) eine gute Wahl für die Klassifizierungsaufgaben (Classifier)? / Ist es zuverlässig?
 
@@ -13,19 +14,45 @@ Zu diesem Zeitpunkt: Ist das Modell (meta-llama/Llama-3.1-8B-Instruct) eine gute
 - 1 Artikel vs. 20-30 Artikel (loop)
 -> Ausfälle? Einfluss auf Klassifizierung? 
 
-4) Falls es nicht funktioniert, wann/wie?
+(4) Falls es nicht funktioniert, wann/wie?)
 
----
 
-Vitals-package ... evtl. später einfühern? Weil momentane Frage ob das Modell zuverlässig ist; Leistung einbricht bei mehr Artikel; längere Prompts & Artikel, nicht die Genauigkeit der Codierungen (ist auch abhängig von Prompt-Design)
+Ergebnisse; Fazit; Fragen:
+--------------------------
+Auch beim Loop von 50 Artikeln (25 kurz und 25 lang) mit der langen/komplizierteren Prompt sind die Ergebnisse strukturiert & im verlangten Format. Der Code ist beim selben Artikel jeweils identisch, die Begründungen sind nachvollziehbar, es wird nichts halluziniert.
+
+Zeit für die Klassifizierung pro Artikel (bei 50)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  2.542   2.826   3.568   4.000   5.046   6.315 
+  
+==> ich würde sagen, das ist ein gutes Resultat, zeig, dass das Modell so weiterhin genutzt werden kann (oder?)
+
+Das einzige Problem: das Modell muss im Loop (siehe vitals_classifier.R) für jeden Artikel neu initialisiert werden. Habe es ohne versucht, dann schlägt die Klassifizierung für jeden Artikel auch nach 3 Versuchen fehl....
+-> Ist das ein Problem? Hat das Auswirkungen auf die Kosten?
+
+Und: bei der Classifier Funktion (classifier.R) hab ich eine Retry-Logik eingebaut; ein Aufruf wird bis zu 3 Mal wiederholt, mit Sys.sleep(5) dazwischen. Das hab ich bei einem früheren Projekt so gemacht, aber war nicht mehr sicher ob das so ok ist?
+
+
+
+
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+Vitals-package ... evtl. später einfühern? Weil momentane Frage ob das Modell zuverlässig ist & Leistung einbricht bei mehr Artikeln, längeren Prompts & Artikeln. Und nicht die Genauigkeit der Codierungen (weil das ist auch abhängig von Prompt-Design).
 Aber: bei der Gesamtevaluation einsetzen; evtl. auch gleich ins Tool integrieren --> abgleichen mit manuell codierten Testartikeln -> einfluss der Prompt-Optimierung (Instructor) auf Accuracy (nicht Reasoning; aber Übereinstimmung mit Code). 
 
 später testen -> Genauigkeit/Klassifikationsübereinstimmung , ("beste") Prompt, Qualität der Begründung (abh. von Prompt)
+---------------------------------------------------------------------------------
 
-----
-
-
-Ergebnisse: 
+--------------------------------------------------------------------------------
+Ergebnisse (sehr detailliert; Schritt für Schritt)
 
 1) Artikellänge (lang= 9043 Zeichen / kurz = 1439 Zeichen) & Promptlänge(-komplexität)
 -----------------------------------------------------------------------------
@@ -76,12 +103,21 @@ Problem: Wenn ich das Environment zwischen den Läufen nicht lösche, funktionie
 
 
 LOOP: 10 Artikel (5 kurz, 5 lang) --> Error 400; Tokenmax. überschritten...
--> hf_model für jeden Artikel neu initialisieren => funktioniert mit kurzer Prompt, auch im JSON Format und Code bleibt gleich/Reasoning ist stabil (ist das eine "stabile"" Lösung?? oder Problem für Modell)
+-> hf_model für jeden Artikel neu initialisieren => funktioniert mit kurzer Prompt, auch im JSON Format und Code bleibt gleich/Reasoning ist stabil (ist das eine "stabile"" Lösung?? oder Problem für Modell) oder kostet das mehr?? wenn ich's rausnehme failed jeder artikel nach 3 tries 
 
 bei Loop & lange Prompt: Error in `req_perform()`: ! HTTP 504 Gateway Timeout. -> retry?
 Retry & sys.sleep; funktioniert. 
 Ergebnisse Loop x lange Prompt:
 Format stimmt, wird korrekt extrahiert. Kurzer Artikel: Code und Begründung bleibt gleich wie bei den vorherigen Versuchen; langer Artikel: anderer Code... aber Begrüdnung ist verständlich; nichts Halluziniert. => grundsätzlich ok; kann man über Prompt Engineering verbessern würd ich sagen...
 
+
+für 50 Artikel (25 kurz, 25 lang):
+Alle im korrekten Format; Codes gleich & Begründungen ähnlich wie mit 10 Artikel Loop. 
+cat("Success:", mean(loop_50_articles_testing_classifier_longPrompt_incl_latency$success), "\n")
+Success: 1 
+> print(summary(loop_50_articles_testing_classifier_longPrompt_incl_latency$latency_s))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  2.075   2.382   3.091   3.156   3.793   4.901 
+==> lange Artikel eher mehr Zeit, kurze weniger. 
 
 Sollte ich noch etwas einbauen womit Artikel getrennt werden können, wenn sie zu gross sind? Oder doch nicht weils jetzt funktioniert?

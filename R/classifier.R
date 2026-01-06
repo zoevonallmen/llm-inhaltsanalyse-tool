@@ -11,7 +11,8 @@ hf_model <- ellmer::chat_huggingface(
   model = LLAMA_MODEL,
   credentials = function() API_KEY,
   params = list(
-    temperature = 0.0#?
+    temperature = 0.0,
+    max_new_tokens = 300#?
   ),
   echo = "none"
 )

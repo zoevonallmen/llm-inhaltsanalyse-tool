@@ -27,13 +27,11 @@ extract_json <- function(x) {
   
   x <- as.character(x)[1]
   
-  # Fall 1: JSON in ```json ... ```
   m <- str_match(x, "```(?:json)?\\s*([\\s\\S]*?)\\s*```")
   if (!is.na(m[1,2])) {
     return(str_trim(m[1,2]))
   }
   
-  # Fall 2: JSON irgendwo im Text
   start <- str_locate(x, fixed("{"))[1]
   ends  <- str_locate_all(x, fixed("}"))[[1]]
   

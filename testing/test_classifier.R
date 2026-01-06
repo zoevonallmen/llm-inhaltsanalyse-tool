@@ -19,8 +19,6 @@ test_prompt <- paste(
   #collapse = "\n"
 )
 
-
-
 # Test classifier function -----------------------------------------------------
 
 response <- classifier(

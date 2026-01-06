@@ -1,0 +1,25 @@
+Erklärung zum Vorgehen: 
+
+Zu diesem Zeitpunkt: Ist das Modell (meta-llama/Llama-3.1-8B-Instruct) eine gute Wahl für die Klassifizierungsaufgaben (Classifier)? / Ist es zuverlässig?
+
+1) Liefert das Modell zuverlässig strukturierte Ergebnisse (gültiges JSON-Format, immer mit Code und Begründung/Reasoning)
+-> Mehrere Artikel testen
+
+2) Beeinträchtigt die Länge von Prompt und/oder Artikel/Text-Input das Modell? (Stabilität) 
+-> kurze vs. lange Artikel testen; kure vs. lange Prompt testen
+-> beurteilen = JSON-Format, Begründung/Reasoning, Latenz
+
+3) Beeinträchtigt die Anzahl Artikel/Text-Inputs das Modell?
+- 1 Artikel vs. 20-30 Artikel (loop)
+-> Ausfälle? Einfluss auf Klassifizierung? 
+
+4) Falls es nicht funktioniert, wann/wie?
+
+---
+
+Vitals-package ... evtl. später einfühern? Weil momentane Frage ob das Modell zuverlässig ist; Leistung einbricht bei mehr Artikel; längere Prompts & Artikel, nicht die Genauigkeit der Codierungen (ist auch abhängig von Prompt-Design)
+Aber: bei der Gesamtevaluation einsetzen; evtl. auch gleich ins Tool integrieren --> abgleichen mit manuell codierten Testartikeln -> einfluss der Prompt-Optimierung (Instructor) auf Accuracy (nicht Reasoning; aber Übereinstimmung mit Code). 
+
+später testen -> Genauigkeit/Klassifikationsübereinstimmung , ("beste") Prompt, Qualität der Begründung (abh. von Prompt)
+
+----

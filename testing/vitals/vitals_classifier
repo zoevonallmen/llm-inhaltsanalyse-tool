@@ -16,6 +16,9 @@ Zu diesem Zeitpunkt: Ist das Modell (meta-llama/Llama-3.1-8B-Instruct) eine gute
 
 (4) Falls es nicht funktioniert, wann/wie?)
 
+Vitals-package wurde nicht verwendet. Evtl. hab ich das package noch nicht ganz verstanden, aber ich fand, dass wir aktuell ja nur die Zuverlässigkeit und Stabilität des Modells testen wollen (sprich gibt es Einbrüche bei längeren Prompts oder Artikeln oder einer grösseren Anzahl von Testen) und nicht die Genauigkeit der Codierungen oder wie sich die Promptoptimierung darauf auswirkt, da die Prompt ja mittels LLM optimiert werden soll
+Ich fände es aber sinnvoll, das vitals-Package später einzuführen, zb zur Gesamtevaluation des Tools und ggf. (wenn das überhaupt möglich ist) direkt ins Tool zu integrieren, um zb Modelloutput mit manuell codierten Testartikeln abzugleichen (quasi die manuelle Codierung als "target"). Dadurch könnte auch gleich der Einfluss der Prompt-Optimierung (vom Instructor) auf die Klassifizerungsgenauigkeit (Übereinstimmung der Codes, nicht Reasonings) untersucht werden. Oder einfach am Schluss für meine Gesamtevaluation des Tools. 
+
 
 Ergebnisse; Fazit; Fragen:
 --------------------------
@@ -44,12 +47,12 @@ Und: bei der Classifier Funktion (classifier.R) hab ich eine Retry-Logik eingeba
 
 
 
--------------------------------------------------------------------------------
-Vitals-package ... evtl. später einfühern? Weil momentane Frage ob das Modell zuverlässig ist & Leistung einbricht bei mehr Artikeln, längeren Prompts & Artikeln. Und nicht die Genauigkeit der Codierungen (weil das ist auch abhängig von Prompt-Design).
-Aber: bei der Gesamtevaluation einsetzen; evtl. auch gleich ins Tool integrieren --> abgleichen mit manuell codierten Testartikeln -> einfluss der Prompt-Optimierung (Instructor) auf Accuracy (nicht Reasoning; aber Übereinstimmung mit Code). 
 
-später testen -> Genauigkeit/Klassifikationsübereinstimmung , ("beste") Prompt, Qualität der Begründung (abh. von Prompt)
----------------------------------------------------------------------------------
+
+
+
+
+
 
 --------------------------------------------------------------------------------
 Ergebnisse (sehr detailliert; Schritt für Schritt)

@@ -23,3 +23,53 @@ Aber: bei der Gesamtevaluation einsetzen; evtl. auch gleich ins Tool integrieren
 später testen -> Genauigkeit/Klassifikationsübereinstimmung , ("beste") Prompt, Qualität der Begründung (abh. von Prompt)
 
 ----
+
+
+Ergebnisse: 
+
+1) Artikellänge (lang= 9043 Zeichen / kurz = 1439 Zeichen) & Promptlänge(-komplexität)
+-----------------------------------------------------------------------------
+Kurze Prompt x kurzer Artikel:
+Format gut, Begründung verständlich. 
+> response$success
+[1] TRUE
+> response$code
+[1] "Wirtschaft"
+> response$reasoning
+[1] "Der Text handelt hauptsächlich von der Wirtschaft und der Auswirkung der SVP-Initiative auf den Studentenaustausch und die Personenfreizügigkeit. Economiesuisse wird als Wirtschaftsverband erwähnt und ihre Kampagne zur Abstimmung wird analysiert. Der Text befasst sich auch mit den Auswirkungen auf den Bildungsvertrag und die bilateralen Verträge, was ein wichtiger Aspekt der Wirtschaftspolitik ist."
+--
+Kurze Prompt x langer Artikel:
+Format gut, Begründung verständlich
+> response$success
+[1] TRUE
+> response$code
+[1] "Sicherheit"
+> response$reasoning
+[1] "Der Text handelt hauptsächlich von der Sicherheit und der Auswirkung der Personenfreizügigkeit auf die Schweiz. Die Diskussion um die Zuwanderung und die Sozialleistungen für EU-Bürger wird analysiert und die Bedenken um die Sicherheit und die Finanzierung der Sozialversicherungen werden hervorgehoben. Die Zunahme bei den Totalisierungen und die Diskussion um die Meldepflicht für stellenlose EU-Bürger sind wichtige Aspekte der Sicherheitsdiskussion."
+---
+kurzer Artikel, lange/komplexe Prompt
+Format stimmt immer noch; Code und Begründung wie bei der kurzen Prompt 
+### Note: evtl. ein Tokenmax. beim Reasoning einbauen? was wäre sinnvoll...
+> response$success
+[1] TRUE
+> response$code
+[1] 4 (Sicherheit)
+> response$reasoning
+[1] "Der Artikel diskutiert die Zunahme von EU-Bürgern, die in der Schweiz Arbeitslosengeld beziehen, obwohl sie seit weniger als einem Jahr hier leben. Die Behörden bemühen sich, Missbräuche zu verhindern, aber die Zahlen zeigen, dass die Situation sich verschlechtert. Die Artikel spricht von 'Armutsmigration' und 'Missbrauch' und betont, dass die Schweiz Zeit hat, Gegenmassnahmen zu ergreifen. Die Justizministerin Simonetta Sommaruga prüft eine Meldepflicht für stellenlose EU-Bürger, um die Personenfreizügigkeit nicht dazu zu nutzen, in einem fremden Land an grosszügige Sozialleistungen zu gelangen. Der Artikel suggeriert, dass die Einwanderung die Sozialwerke belastet und dass die Schweiz Zeit hat, Gegenmassnahmen zu ergreifen. Daher ist der dominante Frame 'Sicherheit'."
+> response$raw
+```json
+{
+  "code": 4,
+  "reasoning": "Der Artikel diskutiert die Zunahme von EU-Bürgern, die in der Schweiz Arbeitslosengeld 
+beziehen, obwohl sie seit weniger als einem Jahr hier leben. Die Behörden bemühen sich, Missbräuche zu 
+verhindern, aber die Zahlen zeigen, dass die Situation sich verschlechtert. Die Artikel spricht von 
+'Armutsmigration' und 'Missbrauch' und betont, dass die Schweiz Zeit hat, Gegenmassnahmen zu ergreifen. 
+Die Justizministerin Simonetta Sommaruga prüft eine Meldepflicht für stellenlose EU-Bürger, um die 
+Personenfreizügigkeit nicht dazu zu nutzen, in einem fremden Land an grosszügige Sozialleistungen zu 
+gelangen. Der Artikel suggeriert, dass die Einwanderung die Sozialwerke belastet und dass die Schweiz Zeit
+hat, Gegenmassnahmen zu ergreifen. Daher ist der dominante Frame 'Sicherheit'."
+}
+
+---
+
+Problem: Wenn ich das Environment zwischen den Läufen nicht lösche, funktioniert es nach 2-3 Mal nicht mehr: Error 400: The input is longer than the model's context length (Tokenmax.überschreitung)

@@ -2,7 +2,7 @@
 article_short <- readLines("testing/testprompts/article_24_SHORT.txt")
 article_long <- readLines("testing/testprompts/article_6_LONG.txt")
 
-article_8 <- readLines("testing/testprompts/article_8.txt") #2766 Zeichen
+# article_8 <- readLines("testing/testprompts/article_8.txt") #2766 Zeichen
 
 # Prompts ---------------------------------------------------------------------
 prompt_short <- "Codieren Sie den Text nach den Kriterien 'Wirtschaft', 'Sicherheit', 'Kultur' oder 'Humanitär' und begründen Sie Ihre Wahl."
@@ -33,3 +33,40 @@ response$raw
 
 
 # Loop ----------------------------------------------------------------------------
+
+artikel_für_loop <- list(
+  article_long,
+  article_long,
+  article_long,
+  article_long,
+  article_long,
+  article_short,
+  article_short,
+  article_short,
+  article_short,
+  article_short
+)
+
+
+loop_results <- lapply(seq_along(artikel_für_loop), function(i) {
+  
+  res <- classifier(
+    article_text = artikel_für_loop[[i]],
+    prompt = prompt_short,
+    chat_object = hf_model
+  )
+  
+  
+  list(
+    run        = i,
+    success    = res$success,
+    code       = res$code,
+    reasoning  = res$reasoning,
+    raw        = res$raw,
+    error      = res$error
+  )
+})
+
+loop_df <- bind_rows(loop_results)
+
+print(loop_df)

@@ -73,3 +73,6 @@ hat, Gegenmassnahmen zu ergreifen. Daher ist der dominante Frame 'Sicherheit'."
 ---
 
 Problem: Wenn ich das Environment zwischen den Läufen nicht lösche, funktioniert es nach 2-3 Mal nicht mehr: Error 400: The input is longer than the model's context length (Tokenmax.überschreitung)
+
+
+LOOP: 10 Artikel (5 kurz, 5 lang) --> Error 400; Tokenmax. überschritten...

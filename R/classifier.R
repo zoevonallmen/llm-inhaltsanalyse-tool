@@ -7,7 +7,7 @@ LLAMA_MODEL <- "meta-llama/Llama-3.1-8B-Instruct"
 API_KEY <- Sys.getenv("HUGGINGFACE_API_KEY")
 
 hf_model <- ellmer::chat_huggingface(
-  system_prompt = "Du bist der Classifier. Deine Aufgabe ist die strikte Anwendung des Codierschemas. Antworte IMMER im JSON-Format mit den Feldern 'code' und 'reasoning'.",  #system-prompt noch überarbeiten/begründen; und DE or EN?
+  system_prompt = "Du bist der Classifier. Deine Aufgabe ist die strikte Anwendung des Codierschemas. Antworte IMMER im JSON-Format mit den Feldern 'code' und 'reasoning'.",  #Prompt ist noch provisorisch; muss überarbeitet werden; auf englisch weil llama Modell auf englisch trainiert wurde 
   model = LLAMA_MODEL,
   credentials = function() API_KEY,
   params = list(

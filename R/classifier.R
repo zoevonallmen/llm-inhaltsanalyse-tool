@@ -22,23 +22,25 @@ hf_model <- ellmer::chat_huggingface(
 
 library(stringr)
 
+# TIPP: Alle geladenen Pakete an einem Ort (Section) sammeln.
+
 extract_json <- function(x) {
   if (is.null(x) || length(x) == 0) return(NULL)
-  
+
   x <- as.character(x)[1]
-  
+
   m <- str_match(x, "```(?:json)?\\s*([\\s\\S]*?)\\s*```")
   if (!is.na(m[1,2])) {
     return(str_trim(m[1,2]))
   }
-  
+
   start <- str_locate(x, fixed("{"))[1]
   ends  <- str_locate_all(x, fixed("}"))[[1]]
-  
+
   if (is.na(start) || nrow(ends) == 0) return(NULL)
-  
+
   end <- ends[nrow(ends), "end"]
-  
+
   str_trim(substr(x, start, end))
 }
 
@@ -46,28 +48,28 @@ extract_json <- function(x) {
 
 classifier <- function(article_text, prompt, chat_object = hf_model,
                        max_attempts = 3, sleep_sec = 5){ #weiss nicht wieviel von beidem sinvoll ist, muss geprüft werden!!!
-  
+
  attempt <- 1
  while(attempt <= max_attempts) {
-   
+
   user_prompt <- paste0(
-    prompt, 
-    "\n\n--- Dokument zur Codierung ---\n", 
+    prompt,
+    "\n\n--- Dokument zur Codierung ---\n",
     article_text
   )
 
   raw_response <- tryCatch({
     chat_object$chat(user_prompt, echo = "none")
   }, error = function(e) e)
-  
+
   if(!inherits(raw_response, "error")) {
-   
+
     parsed <- tryCatch(jsonlite::fromJSON(raw_response), error = function(e) NULL)
     json_used <- raw_response
-  
+
   if (is.null(parsed)) {
     json_candidate <- extract_json(raw_response)
-    
+
     if (!is.null(json_candidate)) {
       parsed <- tryCatch(
         jsonlite::fromJSON(json_candidate),
@@ -76,8 +78,7 @@ classifier <- function(article_text, prompt, chat_object = hf_model,
       json_used <- json_candidate
     }
   }
-  
-  
+
   if (is.null(parsed)) {
     return(list(
       success   = FALSE,
@@ -87,25 +88,26 @@ classifier <- function(article_text, prompt, chat_object = hf_model,
       json = NA,
       error = "JSON parsing failed"
     ))
-  } else {
-    return(list(
+  }
+  # TIPP: Ein else {} brauchen Sie hier nicht. Wenn die if-Bedingung vorher erfüllt ist,
+  # wird die dortige Liste zurückgegeben, falls nicht diese. So wird Ihr Code klarer und einfacher zu managen.
+
+  return(list(
     success   = TRUE,
     code      = parsed$code,
     reasoning = parsed$reasoning,
     raw       = raw_response,
-    json      = json_used, 
+    json      = json_used,
     error     = NULL
   ))
-  }
 
-  } else {
-    
-    message(paste0("Fehler", attempt, "/", max_attempts, ". Retry in ", sleep_sec, " Sekunden"))
-    Sys.sleep(sleep_sec)
-    attempt <- attempt + 1
-  }
+  } # TIPP: Gleiches Prinzip. Ein else ist nicht nötig, da es ja zuvor ein return() gibt.
+
+   message(paste0("Fehler", attempt, "/", max_attempts, ". Retry in ", sleep_sec, " Sekunden"))
+   Sys.sleep(sleep_sec)
+   attempt <- attempt + 1
  }
- 
+
  list (
    success   = FALSE,
    code      = NA,
@@ -117,4 +119,3 @@ classifier <- function(article_text, prompt, chat_object = hf_model,
 }
 
 
-  

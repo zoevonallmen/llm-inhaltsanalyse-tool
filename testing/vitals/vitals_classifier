@@ -20,6 +20,8 @@ Vitals-package wurde nicht verwendet. Evtl. hab ich das package noch nicht ganz 
 Ich fände es aber sinnvoll, das vitals-Package später einzuführen, zb zur Gesamtevaluation des Tools und ggf. (wenn das überhaupt möglich ist) direkt ins Tool zu integrieren, um zb Modelloutput mit manuell codierten Testartikeln abzugleichen (quasi die manuelle Codierung als "target"). Dadurch könnte auch gleich der Einfluss der Prompt-Optimierung (vom Instructor) auf die Klassifizerungsgenauigkeit (Übereinstimmung der Codes, nicht Reasonings) untersucht werden. Oder einfach am Schluss für meine Gesamtevaluation des Tools. 
 
 
+[Ja, diesen Ansatz finde ich sehr stimmig und passend. fm]
+
 Ergebnisse; Fazit; Fragen:
 --------------------------
 Auch beim Loop von 50 Artikeln (25 kurz und 25 lang) mit der langen/komplizierteren Prompt sind die Ergebnisse strukturiert & im verlangten Format. Der Code ist beim selben Artikel jeweils identisch, die Begründungen sind nachvollziehbar, es wird nichts halluziniert.
@@ -30,10 +32,17 @@ Zeit für die Klassifizierung pro Artikel (bei 50)
   
 ==> ich würde sagen, das ist ein gutes Resultat, zeig, dass das Modell so weiterhin genutzt werden kann (oder?)
 
+Ja, das sehe ich ebenso. Wichtig ist, dass Sie Ihren "induktiven" Ansatz argumentativ in Ihrer Arbeit darlegen und Ihre Meinung "gut nutzbares Modell" mit den entsprechenden "Tests" hinterlegen.
+
+
 Das einzige Problem: das Modell muss im Loop (siehe vitals_classifier.R) für jeden Artikel neu initialisiert werden. Habe es ohne versucht, dann schlägt die Klassifizierung für jeden Artikel auch nach 3 Versuchen fehl....
 -> Ist das ein Problem? Hat das Auswirkungen auf die Kosten?
 
+[Der R Code gefällt mir. Sie nutzen ja (zum Glück) gar keine Schleife, sondern eine apply-Funktion. D. h., Sie wenden eine (anonyme) Funktion auf alle Einträge eines Vektors an. Da sist effizienter und vermeidet eine ineffiziente Schleife und erklärt auch die Initialisierung für jeden Eintrag. Haben Sie bei Ihren Versuchen die Initaulisierung aus der Iteration heruasgenommen? Also erst das Modell initualisieren und dann nur noch den veränderten Chat anwenden? Hier kann das Problem in der Geschwindigkeit in Kombination mit der API liegen, dass es deshalb abbricht. Aus meiner Sicht ist Ihre Lösung jenseits dessen vollkommen in Orndung. Beschreiben Sie in Ihrer Arbeit auch gerne die Fallstricke, die Sie meistern mussten um zu Ihrem finalen Lösungsansatz zu kommen. fm]
+
 Und: bei der Classifier Funktion (classifier.R) hab ich eine Retry-Logik eingebaut; ein Aufruf wird bis zu 3 Mal wiederholt, mit Sys.sleep(5) dazwischen. Das hab ich bei einem früheren Projekt so gemacht, aber war nicht mehr sicher ob das so ok ist?
+
+[Ja, das ist ein guter Ansatz. Ich habe Ihnen ein paar Tipps im Code ergänzt. fm]
 
 
 

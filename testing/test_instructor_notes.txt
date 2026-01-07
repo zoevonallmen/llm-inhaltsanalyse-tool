@@ -46,3 +46,6 @@ Ergebnisse 1. Promptgenerierung:
 -----
 NOTES: Sprachregeln und Unsicherheiten wurden vorab nicht definiert, vom Modell generiert. 
 -----
+
+Optimierung: Feedback eingrführt; Fazit: Mechansmus funktioniert. 
+==> ABER: unbedingt Systemprompt anpassen.....

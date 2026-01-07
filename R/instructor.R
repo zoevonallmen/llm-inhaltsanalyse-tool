@@ -2,33 +2,6 @@
 LLAMA_MODEL <- "meta-llama/Llama-3.1-8B-Instruct"
 API_KEY <- Sys.getenv("HUGGINGFACE_API_KEY")
 
-# Instructor Modus 1: Prompt-Generierung ---------------------------------------
-
-hf_instructor_generate <- ellmer::chat_huggingface(
-  model = LLAMA_MODEL,
-  system_prompt = SYSTEM_PROMPT_GENERATE,
-  credentials = function() API_KEY,
-  echo = "none",
-  params = list(
-    temperature = 0.0, #?
-    max_tokens = 1000  #? 
-  )
-)
-
-# Instructor Modus 2: Prompt-Optimierung ---------------------------------------
-
-hf_instructor_optimize <- ellmer::chat_huggingface(
-  model = LLAMA_MODEL,
-  system_prompt = SYSTEM_PROMPT_OPTIMIZE,
-  credentials = function() API_KEY,
-  echo = "none",
-  params = list(
-    temperature = 0.0, #?
-    max_tokens = 1000  #? 
-  )
-)
-
-
 # System Prompts (provisorisch von ChatGPT, fürs testen) -----------------------
 
 SYSTEM_PROMPT_GENERATE <- "
@@ -72,3 +45,30 @@ Do NOT perform any classification.
 
 Return ONLY the revised task prompt text.
 "
+
+
+# Instructor Modus 1: Prompt-Generierung ---------------------------------------
+
+hf_instructor_generate <- ellmer::chat_huggingface(
+  model = LLAMA_MODEL,
+  system_prompt = SYSTEM_PROMPT_GENERATE,
+  credentials = function() API_KEY,
+  echo = "none",
+  params = list(
+    temperature = 0.0, #?
+    max_tokens = 1000  #? 
+  )
+)
+
+# Instructor Modus 2: Prompt-Optimierung ---------------------------------------
+
+hf_instructor_optimize <- ellmer::chat_huggingface(
+  model = LLAMA_MODEL,
+  system_prompt = SYSTEM_PROMPT_OPTIMIZE,
+  credentials = function() API_KEY,
+  echo = "none",
+  params = list(
+    temperature = 0.0, #?
+    max_tokens = 1000  #? 
+  )
+)

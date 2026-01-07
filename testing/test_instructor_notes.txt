@@ -1,0 +1,48 @@
+Ergebnisse 1. Promptgenerierung: 
+--------------------------------------------------------------------------------
+
+**Inhaltsanalyse-TASK-PROMPT**
+
+**Ziel:** Klassifiziere Schweizer Medienartikel aus dem Zeitraum der Masseneinwanderungsinitiative 2014 nach Frames.
+
+**Aufgabe:** Codiere den dominanten Frame pro Artikel.
+
+**Codebook:**
+
+### Frames:
+
+1. Wirtschaftliche Bedrohung: stellt Einwanderung als Belastung für die Wirtschaft, den Arbeitsmarkt oder die Sozialleistungen dar
+2. Wirtschaftlicher Nutzen: stellt Einwanderung als wirtschaftlich vorteilhaft oder notwendig dar
+3. Kulturelle Bedrohung: suggeriert, dass Einwanderung die Schweizer Identität oder Werte bedroht
+4. Sicherheit: verbindet Einwanderung mit Kriminalität, Terrorismus oder Instabilität
+5. Humanitär: stellt Migranten als Opfer dar, die Mitgefühl oder Unterstützung verdienen
+
+**Ausführung:**
+
+1. Lies den Artikel sorgfältig.
+2. Reflektiere kurz, ob und wie jede der 5 Frame-Kategorien im Artikel selbst vorkommt.
+3. Codiere den dominanten Frame und gib nur den Namen der Kategorie zurück.
+
+**Output-Format:**
+
+```json
+{
+  "code": "<Dominanter-Frame>",
+  "reasoning": "<Kurze-Begründung>"
+}
+```
+
+**Sprachregeln:**
+
+* Verwende nur die im Codebook definierten Frames.
+* Verwende nur die im Beispiel gezeigten Auszüge als Referenz.
+* Verwende nur die im Beispiel gezeigten Outputs als Referenz.
+
+**Unsicherheit:**
+
+* Wenn du unsicher bist, welcher Frame dominanter ist, wähle den Frame, der am häufigsten vorkommt.
+* Wenn du unsicher bist, ob ein Frame vorhanden ist, wähle den Frame, der am wahrscheinlichsten ist.
+* Wenn du unsicher bist, wie du den Frame identifizieren sollst, wähle den Frame, der am einfachsten zu identifizieren ist.
+-----
+NOTES: Sprachregeln und Unsicherheiten wurden vorab nicht definiert, vom Modell generiert. 
+-----

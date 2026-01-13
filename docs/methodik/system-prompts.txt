@@ -86,7 +86,35 @@ and the calculation of intermodel and interprompt agreement scores to
 locate potentially easy-to-classify cases and those that are less so" 
 --------------------------------------------------------------------------------
 
-3) von der ellmer-Dokumnetation auf GitHub: 
+
+3) Tönberg, Best Practices for Text Annotation with Large Language Models, 2024
+--------------------------------------------------------------------------------
+=> Best practice involves developing a prompt codebook with annotation guidelines for the human 
+coders combined with detailed description of the prompts and LLM settings. The coding 
+guidelines should, as always (Glaser and Strauss, 2009), be detailed instructions with clear 
+definitions of the coding categories, examples of text corresponding to each category, and 
+instructions on how to handle ambiguous cases.
+
+
+General Advice:
+- Prompt sollte folgende Elemente beinhalten: Kontext (Einführung zur Orientierung/Hintergrund-Info; augeteilt in Rolle & Kontext), Frage (definiert Codierungs-Task) & Bedingungen (spezifiziert Output-Format)
+- Instruktionen in der richtigen Reihenfolge: 1) Kontext 2) Instruktionen 3) Bedingungen
+- Wenn kategorische Antwort --> Kategorien in alphabetischer Reihenfolge/"each Option should be separated by a line-break"
+- "Ich weiss nicht"-Antwortoption immer einführen
+- Listen nutzen wenn Instruktionen komplex sind
+- JSON Format nutzen
+- LLM für Prompts zu verbessern (LLM gibt Feedback und gibt neue Versionen einer Prompt)
+- Balamce zwischen kurz/knapp & spezifisch 
+- CoT, Task in kleinere Zwischenschritte runterbrechen "It can also be useful to trigger the model to engage in 
+reasoning by using a prefix such as “Let’s think step by step.” 
+- System instructions: For most LLMs, the prompt instructions are provided as a “system” 
+instruction, with the input as “user” request.  
+- Few-shot prompting: It is often beneficial to also provide examples to guide the desired 
+output, so called few-shot prompting, sent as a separate “user” and “assistant” dialogue.  
+
+
+
+4) von der ellmer-Dokumnetation auf GitHub: 
 --------------------------------------------------------------------------------
 - put each prompt its own, separate file.       #wäre wichtige Instruktion für die Instructor System-Prompt... + Speicherung/Versionierung
 - Second, write the prompts using markdown.
@@ -199,3 +227,38 @@ Return ONLY the revised task prompt text.
 - ABER: Die Decision Rules fehlen oder was ich Kontext genannt hab oder instructions / "improve the CURRENT task prompt"; und ist es eine task oder User prompt?
 - Rules gut mit maintain & preserve & not introduce new categories, make (minimal??) targeted changes
 - eignetlich ok! und hat gut funktioniert. 
+
+
+
+
+--------------------------------------------------------------------------------
+PARAMETER
+
+Than et al.:
+For all tests,
+we set a seed and set the temperature parameter to 0 to minimize output vari
+ation and to enhance reliability and reproducibility,7 and we set the context
+window to the maximum allowed for each model.
+
+Törnberg: 
+"Tweaking these settings are important to improve reliability and desirability of 
+responses, and it may take some experimentation to figure out the appropriate settings for your 
+use cases. The following list shows some common settings you may come across when using 
+LLMs: 
+• Max Length – Sets the maximal number of tokens the model generates. Specifying a 
+max length allows you to control costs, and prevent long or irrelevant responses. 
+12 
+• Temperature – The temperature parameter controls how random the model output is, 
+essentially increasing the weights of all other possible tokens. Low temperature leads to 
+more deterministic results, while high temperature leads to more randomness, that is, 
+more diverse or creative outputs. For data annotation, a lower temperature is usually 
+recommended, such as 0. 
+• Top-P: Adjusts the range of considered tokens. A low Top P ensures precise, confident 
+responses, while a higher value promotes diversity by including less likely tokens. For 
+data annotation, a lower Top-P is usually recommended, such as 0.2 to 0.4. If using Top
+P, your temperature must be above 0. 
+• Top-K: The top-k parameter limits the model’s predictions to the top-k most probable 
+tokens. By setting a value for top-k, you can thereby limit the model to only considering 
+the most likely tokens. 
+Your parameters must always be explicitly specified – even if they are the default parameters – 
+as this is necessary for reproducibility."

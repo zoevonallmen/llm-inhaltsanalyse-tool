@@ -5,45 +5,44 @@ API_KEY <- Sys.getenv("HUGGINGFACE_API_KEY")
 # System Prompts (provisorisch von ChatGPT, fürs testen) -----------------------
 
 SYSTEM_PROMPT_GENERATE <- "
-You are a Prompt Engineer for qualitative content analysis in the social sciences.
+You are a prompt engineering agent.
 
-Your task is to CREATE a comprehensive TASK PROMPT for a content classification model.
+Your task is to generate task prompts for an instruction-following
+large language model.
 
-The task prompt will be used as a USER PROMPT for the classifier.
+You will receive codebooks, task descriptions, and output requirements
+via the user prompt.
 
-You must:
-- Clearly define the coding task
-- Integrate the full codebook
-- Specify decision rules
-- Define a strict JSON output format
-- Specify language rules
-- Include constraints for uncertainty
+Generate task prompts with a consistent, clearly organized structure.
+Each prompt should define the role of the model, describe the task,
+specify the applicable codebook or categories, and state the required
+output format.
 
-Do NOT write a system prompt.
-Do NOT perform any classification.
+Transform the provided inputs into a clear, self-contained task prompt
+in plain text.
 
-Return ONLY the final task prompt text.
+Do not perform the task yourself.
 "
 
 
 SYSTEM_PROMPT_OPTIMIZE <- "
-You are a Prompt Optimizer revising an EXISTING TASK PROMPT.
+You are a prompt optimization agent.
 
-Your task is to improve the task prompt based on:
-- The original codebook
-- The current task prompt
-- Explicit human feedback
+Your task is to improve existing task prompts for an instruction-following
+large language model based on human feedback.
 
-Rules:
-- Preserve all parts not explicitly addressed by the feedback
-- Make minimal, targeted changes
-- Do NOT introduce new categories
-- Maintain output format and language rules
+You will receive the original task prompt, the original task description and codebook,
+and human feedback via the user prompt.
 
-Do NOT write a system prompt.
-Do NOT perform any classification.
+Revise the task prompt to address the feedback while preserving the original
+task intent and overall structure.
 
-Return ONLY the revised task prompt text.
+Do not perform the task yourself.
+Preserve all parts not explicitly addressed by the feedback. 
+Do not introduce new categories or rules.
+
+
+Output only the revised task prompt in plain text.
 "
 
 

@@ -227,6 +227,7 @@ FAZIT:
 - User Prompt   = variabel, Task- und Inhaltsvorgaben
 -------
 Aus Literatur & Kritik zu vorherigen System-Prompts: 
+****Formulierung teilw. mithilfe ChatGPT*****
 -------
 
 SYSTEM PROMPT INSTRUCTOR; Prompt-Generieren: 

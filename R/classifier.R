@@ -7,8 +7,20 @@ library(stringr)
 LLAMA_MODEL <- "meta-llama/Llama-3.1-8B-Instruct"
 API_KEY <- Sys.getenv("HUGGINGFACE_API_KEY")
 
+SYSTEM_PROMPT <- "
+You are a text classification agent for social-science content analysis.
+
+Your task is to classify text inputs strictly according to the instructions
+provided in the user prompt.
+
+Follow all provided instructions exactly.
+Do not introduce new categories, interpretations, or external knowledge.
+
+Output only the format specified in the user prompt and nothing else.
+"
+
 hf_model <- ellmer::chat_huggingface(
-  system_prompt = "Du bist der Classifier. Deine Aufgabe ist die strikte Anwendung des Codierschemas. Antworte IMMER im JSON-Format mit den Feldern 'code' und 'reasoning'.",  #Prompt ist noch provisorisch; muss überarbeitet werden; auf englisch weil llama Modell auf englisch trainiert wurde 
+  system_prompt = SYSTEM_PROMPT,
   model = LLAMA_MODEL,
   credentials = function() API_KEY,
   params = list(

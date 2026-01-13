@@ -139,16 +139,6 @@ SPRICH:
 
 
 
-
-
-
-
-
-
-
-
-
-
 Bisherige System-Prompt Classifier:
 -----------------------------------
 "Du bist der Classifier. Deine Aufgabe ist die strikte Anwendung des Codierschemas. Antworte IMMER im JSON-Format mit den Feldern 'code' und 'reasoning'."
@@ -197,6 +187,7 @@ Return ONLY the final task prompt text.
 
 => Entscheidung: Lasse ich die Prompt Regeln vorgeben vom User via User-Prompt, oder baue ich einige selbst ein?
 Bsp. CoT oder Integration von Beispielen, oder andere Best Practices... / Auch: Wenn es mehrere Tasks gibt; sage ich dem modell auch es muss mehrere subprompts generieren?
+==> habe entschieden, Struktur vage vorgeben (damit noch CoT, Few Shot usw usw ausprobiert werden kann) aber die wichtigsten Komponenten von Anfang an erhalten sind; Rest via User Prompt
 --------------------------------------------------------------------------------
 
 Bisherige System-Prompts Instructr; Prompt-Optimierung:
@@ -229,6 +220,84 @@ Return ONLY the revised task prompt text.
 - eignetlich ok! und hat gut funktioniert. 
 
 
+--------------------------------------------------------------------------------
+
+FAZIT: 
+- System Prompt = stabil, Verhaltens- und Strukturvorgaben
+- User Prompt   = variabel, Task- und Inhaltsvorgaben
+-------
+Aus Literatur & Kritik zu vorherigen System-Prompts: 
+-------
+
+SYSTEM PROMPT INSTRUCTOR; Prompt-Generieren: 
+- klare Rollen und Funktionsdefinition (z.B. Rolle = prompt engineer, Funktion = task prompts für ein classification agent zu erstellen)
+- Abgrenzungen/Verhaltensregeln: was soll das Modell nicht tun (eg dont perform the task yourself)
+- Erwartete Inputs (Codebook, task description, output requirements via user prompt)
+- Erwartete Eigenschaft Output: (oder quasi Instruktion & Bedingungen; eg generate a task prompt in text)
+- Struktur-Anweisung: eg each prompt should exactly specify the role of model, task, applicable codebook/categories, required output format (grobe Struktur vorgeben basierend auf Literatur für gute Prompts)
+
+
+"You are a prompt engineering agent.
+
+Your task is to generate task prompts for an instruction-following
+large language model.
+
+You will receive codebooks, task descriptions, and output requirements
+via the user prompt.
+
+Generate task prompts with a consistent, clearly organized structure.
+Each prompt should define the role of the model, describe the task,
+specify the applicable codebook or categories, and state the required
+output format.
+
+Transform the provided inputs into a clear, self-contained task prompt
+in plain text.
+
+Do not perform the task yourself."
+--------------------------------------------------------------------------------
+
+SYSTEM PROMPT Instructor; Prompt optimieren: 
+- Rolle: Prompt Optimizer
+- Funktion: Überarbeiten, basierend auf Feedback
+- Erw. Inputs: Original Prompt, Feedback
+- Struktur: ?
+- Grenzen/Verhaltensregeln: keine neue Prompt generieren, keine neuen Kategorien/neues Wissen, explizit adressieren was das Feedback anpeilt
+
+"You are a prompt optimization agent.
+
+Your task is to improve existing task prompts for an instruction-following
+large language model based on human feedback.
+
+You will receive the original task prompt, the original task description and codebook,
+and human feedback via the user prompt.
+
+Revise the task prompt to address the feedback while preserving the original
+task intent and overall structure.
+
+Do not perform the task yourself.
+Preserve all parts not explicitly addressed by the feedback. 
+Do not introduce new categories or rules.
+
+
+Output only the revised task prompt in plain text."
+--------------------------------------------------------------------------------
+
+SYSTEM PROMPT Classifier:
+- Rolle: classification agent
+- Funktion: classify text
+- Ouput: JSON (reasoning, code) 
+- Abgrenzung/Verhaltensregeln
+
+"You are a text classification agent for social-science content analysis.
+
+Your task is to classify text inputs strictly according to the instructions
+provided in the user prompt.
+
+Follow all provided instructions exactly.
+Do not introduce new categories, interpretations, or external knowledge.
+
+Output only the format specified in the user prompt and nothing else."
+--------------------------------------------------------------------------------
 
 
 --------------------------------------------------------------------------------

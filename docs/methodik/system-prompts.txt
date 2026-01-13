@@ -1,0 +1,201 @@
+SYSTEM PROMPTS ENTWERFEN
+--------------------------
+
+Literatur
+---------
+
+1) Choi, et al. (2025). System Prompt Optimization with Meta-Learning. https://arxiv.org/abs/2505.09666
+--------------------------------------------------------------------------------
+Optimierung der System-Prompt wird behandelt: wie kann man System-Prompts automatisch so gestalten, dass sie über viele verschiedene Aufgaben/Bereiche hinweg funktionieren?
+
+System-Prompt als grundlegendes Gerüst für das Verhalten des Modells, eine gut optimierte System-Prompt bleibt über verschiedene Bereiche & Tasks hinweg stabil einsetzbar ist und auf neue User-Prompts wirksam zu reagieren. [brauch ich ja eigentlich nicht, wenns nur um Prompt-Generierung/Opimierung & Coding geht.. // ausser zb wir führen noch induktives Coden ein? Aber dann hängts ja nicht mehr wirklich mit dem Prompt ENgineering zsm]
+--> Bilevel-Optimierung; User- und System-Prompt gleichzeitig optimieren  [geht nicht für mich]
+
+[eventuell nichtt wirklich geeignet, wohl eher für Modelle gedacht, die breitere Augaben lösen sollen. Ausser prompte das LLM mir System-Prompts zu erstellen, mit Angaben wie Rollendefinition, Task? Fraglich ob's Sinn macht weil die System-Prompt hier ja relativ generisch wäre weil Task monoton]
+--------------------------------------------------------------------------------
+
+
+2) Than, N., Fan, L., Law, T., Nelson, L. K., & McCall, L. (2025). Updating “The Future of Coding”: Qualitative Coding with Generative Large Language Models. Sociological Methods & Research, 54(3), 849-888. https://doi.org/10.1177/00491241251339188 
+--------------------------------------------------------------------------------
+Zwei Ansätze, Prompts zu generieren: (S.862 ff.)
+1. Interaktion mit LLMs (Chatbot/Context Window); Ziel = Codinginstruktionen für LLM entwickeln/verbessern. IBRAHIM & VOYER 2024
+2. Existierende Coding-Anleitung in Prompt-Strategie umwandeln.
+
+PARAMETER (Ollion et aal. 2024; Törnbern 2024).
+
+To consider: versteht mein LLM den Begriff, den ich untersuche? (im BSP Inequality)
+Sonstwird untersucht im Paper: Einfluss von Struktur, Länge und Sequenz von Prompts.
+- Referenzen von eigenen Daten -> Simple Artikel mit Code in Prompts inkludiert als Beispeil (few shot) / ABER längere Beispielinputs können Performance verschlechtern [Brown et al. 2020; Chae and Davidson 2025; Rytting et al. 2023]
+
+Ergebnisse/Best Practice: 
+1) Strukturierte Prompt ist wichtig
+2) Zero-Shots teilw. besser als few-shot prompts (few-shot erhöht Komplexität/Länge der Prompt)
+[muss nicht in Systemprompt, kann ich dann auch selbst ausprobieren]
+3) Alle prompts mit Rollenbeschreibung beginnen
+4) Definitionen verbessern die Genauigkeit nicht konsistent, Forscher- und LLM-generierte Definitionen meistes vergleichbar
+5) Länge generell: längere Prompts garantieren nicht hlhere Genauigkeit
+
+=> Beispiel Prompt-Struktur aus dem Paper: 
+1. Rollenbeschrieb (ausgerichtet auf Task)
+2. Meta-Statement: Erklärung des Tasks (Kategorisierung) mit wichtigsten Begriffen aus Codebook
+3. Definition Zielkategorie (zu erst "Read this Definition")
+4. Artikel, der Klassifiziert werden soll (-> wie bei Iteration?)
+5. "Command" ("Fragestellung") 
+6. Klares Output Format ("Respond with ...")
+
+"First, we used the system prompt “You are a news classifier,” aligning
+with our task and priming the LLM with the word news, a genre of text.
+Second, we included a meta-statement: “We categorize articles that are
+related to issues of income inequality, changes in income or wealth,
+general economic conditions.” This statement incorporated the word “cat
+egorize” followed by key terms from the qualitative codebook, guiding the
+output toward our conception of the relevant classification categories.
+Third, we added a definition of the target category, depending on which
+step in the sequence of tests we were at, prefaced with
+“Read this definition: ”. Fourth, we included the actual article to be classified,
+prefaced with “Read this article: ”. Finally, we issued our command, such as
+“Does the article reference American economic inequality? Respond with
+‘Yes’….” We found that this prompting strategy resulted in more consistent
+output with clear binary indicators followed by a justification than other
+prompt structures we tested [...]"
+
+--> Struktur
+“role”: “system”,
+“content”: “You are a news classifier.”
+“role”: “user”,
+“content”:“Wecategorizearticlesthatarerelatedtoissuesof
+income inequality, changes in income or wealth, general
+economic conditions.”
+“role”: “user”,
+“content”: “Read this definition: ”+irrelevant_definitiona,
+“role”: “user”,
+“content”: “Read this article: ”+text,
+“role”: “user”,
+“content”: “Is the article relevant? Answer relevant or
+irrelevant, and why in 1 sentence.”
+
+---
+Addition für später evtl. 
+-> Iterativer Approach Törnberg 
+"For those starting a qualitative project without a ground truth, in
+other words, we cannot provide direction on how detailed of a definition is
+needed to obtain the highest accuracy, which instead will necessitate a
+careful, iterative approach (Törnberg 2024). Such an approach is best practice
+in any case, and it should include both hand coding for validation purposes
+and the calculation of intermodel and interprompt agreement scores to
+locate potentially easy-to-classify cases and those that are less so" 
+--------------------------------------------------------------------------------
+
+3) von der ellmer-Dokumnetation auf GitHub: 
+--------------------------------------------------------------------------------
+- put each prompt its own, separate file.       #wäre wichtige Instruktion für die Instructor System-Prompt... + Speicherung/Versionierung
+- Second, write the prompts using markdown.
+
+"In terms of file names, if you only have one prompt in your project, call it prompt.md. If you have multiple prompts, give them informative names like prompt-extract-metadata.md or prompt-summarize-text.md. If you’re writing a package, put your prompt(s) in inst/prompts, otherwise it’s fine to put them in the project’s root directory.
+Your prompts are going to change over time, so we’d highly recommend commiting them to a git repo. That will ensure that you can easily see what has changed, and that if you accidentally make a mistake you can easily roll back to a known good verison.
+If your prompt includes dynamic data, use ellmer::interpolate_file() to intergrate it into your prompt. interpolate_file() works like glue but uses {{ }} instead of { } to make it easier to work with JSON.
+As you iterate the prompt, it’s a good idea to build up a small set of challenging examples that you can regularly re-check with your latest version of the prompt. Currently you’ll need to do this by hand, but we hope to eventually provide tools that’ll help you do this a little more formally.
+The system prompt (aka developer prompt), which is set when you create a new conversation, and affects every response. It’s used to provide additional instructions to the model, shaping its responses to your needs. For example, you might use the system prompt to ask the model to always respond in Spanish or to write dependency-free base R code. You can also use the system prompt to provide the model with information it wouldn’t otherwise know, like the details of your database schema, or your preferred ggplot2 theme and color palette.""
+
+Syst-Prompt Bsp:
+system_prompt = "
+  You are an expert R programmer who prefers the tidyverse.
+  Just give me the code. I don't want any explanation or sample data.
+"
+
+SPRICH:
+- Rollenzuschreibung
+- Task
+- "Verhaltensregeln"; Output (& Format spezifizeren, wenn möglich)
+--------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+Bisherige System-Prompt Classifier:
+-----------------------------------
+"Du bist der Classifier. Deine Aufgabe ist die strikte Anwendung des Codierschemas. Antworte IMMER im JSON-Format mit den Feldern 'code' und 'reasoning'."
+#Notes: 
+1) Würde auf englisch weil llama 3.1 Modell auf englisch trainiert wurde 
+2) Output (Antworte immer im JSON-Format mit Feldern...) ok, aber: 
+BSP aus ellmer/vignette: (You're an expert baker who also loves JSON. I am going to give you a list of
+                         ingredients and) your job is to return nicely structured JSON. Just return the
+                         JSON and no other commentary. [letzter Teil wäre gut]
+3) "Du bist der Classifier" -> schlecht/vage formuliert
+4) Aufgabe auch ein bisschen vage formuluert
+==> Formulierung?? Evtl. doch mit LLM?
+
+--------------------------------------------------------------------------------
+
+Bisherige System-Prompts Instructr; Prompt-Generierung:
+-------------------------------------------------------
+
+"
+You are a Prompt Engineer for qualitative content analysis in the social sciences.
+
+Your task is to CREATE a comprehensive TASK PROMPT for a content classification model.
+
+The task prompt will be used as a USER PROMPT for the classifier.
+
+You must:
+- Clearly define the coding task
+- Integrate the full codebook
+- Specify decision rules
+- Define a strict JSON output format
+- Specify language rules
+- Include constraints for uncertainty
+
+Do NOT write a system prompt.
+Do NOT perform any classification.
+
+Return ONLY the final task prompt text.
+"
+#Notes:
+- Gut: gute Rollenzuweisung; UND "Return ONLY the final task prompt text."
+- Nicht gut: Task komisch beschrieben? und "used for the classifier" zu vage
+- ? -> wenn der classifier schon das Ausgabeformat in der System-Prompt definiert hat, muss es im User-Prompt nochmals stehen? (Definde strict JSON output format)
+- ? Specify decision rules/language rules? -> eher integrate; kommt ja von der userprompt
+- hier wohl eher, was macht eine gute USER-Prompt aus, und die Sysem prompt so füttern? anstatt blabla das andere
+- Do NOT write a system prompt./Do NOT perform any classification. ist das nötig? aber hat geklappt also drin lassen?
+
+=> Entscheidung: Lasse ich die Prompt Regeln vorgeben vom User via User-Prompt, oder baue ich einige selbst ein?
+Bsp. CoT oder Integration von Beispielen, oder andere Best Practices... / Auch: Wenn es mehrere Tasks gibt; sage ich dem modell auch es muss mehrere subprompts generieren?
+--------------------------------------------------------------------------------
+
+Bisherige System-Prompts Instructr; Prompt-Optimierung:
+------------------------------------------------------
+
+"
+You are a Prompt Optimizer revising an EXISTING TASK PROMPT.
+
+Your task is to improve the task prompt based on:
+- The original codebook
+- The current task prompt
+- Explicit human feedback
+
+Rules:
+- Preserve all parts not explicitly addressed by the feedback
+- Make minimal, targeted changes
+- Do NOT introduce new categories
+- Maintain output format and language rules
+
+Do NOT write a system prompt.
+Do NOT perform any classification.
+
+Return ONLY the revised task prompt text.
+"
+                         
+#Notes: 
+- Gut: Rollenzuweisung, improve task prompt based on original codebook, current task prompt & explicit human feedback
+- ABER: Die Decision Rules fehlen oder was ich Kontext genannt hab oder instructions / "improve the CURRENT task prompt"; und ist es eine task oder User prompt?
+- Rules gut mit maintain & preserve & not introduce new categories, make (minimal??) targeted changes
+- eignetlich ok! und hat gut funktioniert. 

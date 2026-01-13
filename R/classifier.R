@@ -1,6 +1,7 @@
 # Load Libraries ---------------------------------------------------------------
 library(ellmer)
 library(jsonlite)
+library(stringr)
 
 # Initialize Model -------------------------------------------------------------
 LLAMA_MODEL <- "meta-llama/Llama-3.1-8B-Instruct"
@@ -19,11 +20,6 @@ hf_model <- ellmer::chat_huggingface(
 
 
 #Helper Function (extract_json)-------------------------------------------------
-
-library(stringr)
-
-# TIPP: Alle geladenen Pakete an einem Ort (Section) sammeln.
-
 extract_json <- function(x) {
   if (is.null(x) || length(x) == 0) return(NULL)
 

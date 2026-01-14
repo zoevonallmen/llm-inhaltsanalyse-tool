@@ -23,7 +23,7 @@ in plain text.
 
 Do not perform the task yourself.
 "
-
+### vergessen: evtl. noch Anweisung, für jeden Task eine eigene Prompt zu generieren? // Subtasks
 
 SYSTEM_PROMPT_OPTIMIZE <- "
 You are a prompt optimization agent.

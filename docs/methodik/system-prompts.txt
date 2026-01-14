@@ -137,7 +137,26 @@ SPRICH:
 - "Verhaltensregeln"; Output (& Format spezifizeren, wenn möglich)
 --------------------------------------------------------------------------------
 
+5) Zhang et al. Meta Prompting for AI Systems
 
+Meta Prompting = LLM eingesetzt, um Prompts zu erzeugen, strukturiere oder optimieren, wird anschliessend von LLM für die eigentliche Aufageb verwendet
+- Meta-Ebene: wie soll Modell arbeiten?
+- Task-Ebene: führt Aufgabe aus
+
+Rollen: Meta-Agent (in meinem Fall Prompt generieren/optimieren); Task-Agent (Aufgabe durchführen)
+Inputs: Aufgabenbeschrieb, Regeln, Feedback (und Evaluation, aber in meinem Fall nicht von LLM sondern Mensch, HitL)
+Zyklus: Prompt generieren, überprüfen, verbessern (hier alles LLM, mein Fall menschl. Intervention)
+Mata instruktionen ändern nicht wirklich, Task-Prompts variabel
+
+Mein Fall quasi:
+- Meta-Agent = Instructor (Prompt generiern = Instructor generate, Feedback/Eval = Mensch, Prompt refinement = Instructor optimize)
+- Task-Agent = Classifier
+- Task-Prompt = generierte Prompts (V01, V02, ...)
+
+=> keine automatische Optimierung.
+
+=> ist glaub ich relativ. nah dran am jetztigen, System Prompts nicht überarbeiten, ergänzt Theorie
+--------------------------------------------------------------------------------
 
 Bisherige System-Prompt Classifier:
 -----------------------------------
@@ -317,7 +336,6 @@ use cases. The following list shows some common settings you may come across whe
 LLMs: 
 • Max Length – Sets the maximal number of tokens the model generates. Specifying a 
 max length allows you to control costs, and prevent long or irrelevant responses. 
-12 
 • Temperature – The temperature parameter controls how random the model output is, 
 essentially increasing the weights of all other possible tokens. Low temperature leads to 
 more deterministic results, while high temperature leads to more randomness, that is, 
@@ -332,3 +350,57 @@ tokens. By setting a value for top-k, you can thereby limit the model to only co
 the most likely tokens. 
 Your parameters must always be explicitly specified – even if they are the default parameters – 
 as this is necessary for reproducibility."
+
+
+Also: Parameter beeinflussen reliabilität; 
+Für Data Annotation (CLASSIFIER): Temp = 0, Top-P = niedrig (0.2 - 0.4)
+max_tokens??? / add seed for reproducability (in mehreren Papers gesehen)
+top_k?
+
+was mach ich mit dem rest....
+
+
+ELLMER https://ellmer.tidyverse.org/reference/params.html
+
+temperature
+Temperature of the sampling distribution.
+
+top_p
+The cumulative probability for token selection.
+
+top_k
+The number of highest probability vocabulary tokens to keep.
+
+frequency_penalty
+Frequency penalty for generated tokens.
+
+presence_penalty
+Presence penalty for generated tokens.
+
+seed
+Seed for random number generator.
+
+max_tokens
+Maximum number of tokens to generate.
+
+log_probs
+Include the log probabilities in the output?
+
+stop_sequences
+A character vector of tokens to stop generation on.
+
+reasoning_effort, reasoning_tokens
+How much effort to spend thinking? ressoning_effort is a string, like "low", "medium", "high". reasoning_tokens is an integer, giving a maximum token budget. Each provider only takes one of these two parameters.
+
+--> also alle spezifizieren.... 
+
+
+
+
+Also
+Parameter für classifier: 
+- Temperature = 0
+- Top-P = 0.3?
+
+Instructor: 
+- auch ähnlich? oder Temp == höher, weil "more creative" / oder je nach Modus unterschiedlich?

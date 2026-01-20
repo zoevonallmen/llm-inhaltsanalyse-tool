@@ -105,16 +105,26 @@ more deterministic results, while high temperature leads to more randomness, tha
 more diverse or creative outputs. For data annotation, a lower temperature is usually 
 recommended, such as 0." Thönberg et al.]
 
-top_p: ?
-[For 
-data annotation, a lower Top-P is usually recommended, such as 0.2 to 0.4. If using Top
-P, your temperature must be above 0. Thönberg et al.]
+top_p / top_k 
+["For data annotation, a lower Top-P is usually recommended, such as 0.2 to 0.4. If using Top
+P, your temperature must be above 0." aus Thönberg et al.]
+["Top P can be mixed with temperature, but that is typically not advisable. While temperature is typically used over Top P, Top P is useful when token options aren’t as long-tailed."
+https://www.vellum.ai/llm-parameters/temperature?utm_source=google&utm_medium=organic
+] => weil temp = 0 ist top_p und top_k egal, wird ignoriertn // muss nicht in list spezifiziert werden. 
 
-top_k -> just disable??
+seed setzen wichtig!
 
-seed
 
-penalties = not necessary
+max_token: 
+bisher 300; 
+ausgabe JSON:
+"{\"code\": \"Wirtschaftlicher Nutzen\", \"reasoning\": \"Der Artikel erwähnt, dass dank der Personenfreizügigkeit es für Studierende viel unkomplizierter ist, im jeweiligen Land eine Niederlassungsbewilligung zu bekommen und ohne bürokratische Formalitäten einzureisen. Dies suggeriert, dass die Personenfreizügigkeit einen wirtschaftlichen Nutzen für Studierende bringt.\"}"
+==> ugf. 63 Tokens..
+Ich würde Länge der Begründung im User Pormpt definieren (kurz halten); max_tokens als Kostenbremse falls etw. schiefläuft. Doch etwas höher als um die 70 Tokens, falls Begründungen länger werden. Sonst stoppt es nachdem Limit erreicht ist und JSON ist kapputt...
+also... Limit 300 ist ok; Kostenunterschied ist immer noch miniiiiiiiiiiiiiiiiiiiim und eigentlich stoppts ja vorher
+denke ist nicht mega relevant auch keinen Einfluss auf die Klassifizieurng selbst
+
+penalties = not necessary/soll keine Bestrafung für Wortwiederholungen/Themenwiederholungen geben, sonst Verfälschung. Ist default auf Null/deaktiviert, kann ignoriert werden. 
 --------------------------------------------------------------------------------
 PARAMETER INSTRUCTOR (GENERATE)
 

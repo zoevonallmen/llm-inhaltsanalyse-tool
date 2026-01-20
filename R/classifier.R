@@ -25,7 +25,8 @@ hf_model <- ellmer::chat_huggingface(
   credentials = function() API_KEY,
   params = list(
     temperature = 0.0,
-    max_new_tokens = 300#?
+    max_tokens  = 300,
+    seed        = 24
   ),
   echo = "none"
 )

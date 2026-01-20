@@ -5,7 +5,7 @@ Than et al.:
 "For all tests,
 we set a seed and set the temperature parameter to 0 to minimize output vari
 ation and to enhance reliability and reproducibility, and we set the context
-window to the maximum allowed for each model.""
+window to the maximum allowed for each model."
 --------------------------------------------------------------------------------
 Törnberg: 
 "Tweaking these settings are important to improve reliability and desirability of 
@@ -65,17 +65,85 @@ How much effort to spend thinking? ressoning_effort is a string, like "low", "me
 
 --> also alle spezifizieren.... 
 --------------------------------------------------------------------------------
- Parameter meta-llama/Llama-3.1-8B-Instruct (https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct/)
+Parameter meta-llama/Llama-3.1-8B-Instruct (https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct/)
  
 max_tokens; default 256 
+The maximum number of tokens to generate in the response.
+
 tempereature; default 0.6 / min 0 max 5
+Controls the randomness of the output; higher values produce more random results.
+
 top_p => default = NULL / min 0 max 2
+Adjusts the creativity of the AI's responses by controlling how many possible words it considers. Lower values make outputs more predictable; higher values allow for more varied and creative responses.
+
 top_k => default = 0 / min 1 max 50
+Limits the AI to choose from the top 'k' most probable words. Lower values make responses more focused; higher values introduce more variety and potential surprises.
+
 seed; min 1 max 9999999999
+Random seed for reproducibility of the generation.
+
 repetition_penatly =>default = NULL / min 0 max 2
+Penalty for repeated tokens; higher values discourage repetition.
+
 frequency_penalty => default = NULL / min 0 max 2
+Decreases the likelihood of the model repeating the same lines verbatim.
+
 presence_penalty > default = NULL / min 0 max 2
+Increases the likelihood of the model introducing new topics.
+
 
 context window = total nr of tokens model can consider at once (input and output tokens)
 context window = 7968 tokens
 1 Token = 0.75 Wörter (englisch) 
+
+--------------------------------------------------------------------------------
+PARAMETER CLASSIFIER:
+
+temperature = 0
+["Low temperature leads to 
+more deterministic results, while high temperature leads to more randomness, that is, 
+more diverse or creative outputs. For data annotation, a lower temperature is usually 
+recommended, such as 0." Thönberg et al.]
+
+top_p: ?
+[For 
+data annotation, a lower Top-P is usually recommended, such as 0.2 to 0.4. If using Top
+P, your temperature must be above 0. Thönberg et al.]
+
+top_k -> just disable??
+
+seed
+
+penalties = not necessary
+--------------------------------------------------------------------------------
+PARAMETER INSTRUCTOR (GENERATE)
+
+temperature
+[experimentieren, versch. versuchen, aber tendentiell eher höher weil einfach generieren, kreativ, ...]
+
+top_p
+[auch eher höher, versuch mal ganz hoch, mittel tief]
+
+top_k 
+[eigentlich schon durch top_p gegeben? evtl einfach default (NULL) belassen]
+
+seed
+[um parameter zu testen, danach kann's raus]
+
+penatlies könnten evtl nützlich sein; new topics ja eher nicht intriducen; keine wiederholungen (token max)
+--------------------------------------------------------------------------------
+PARAMETER INSTRUCTOR (OPTIMIZE)
+
+temperature
+[auch eher paar Versuche machen, aber generell rel. tief (so 0.2? bisschen kreativ aber gezielt feedback?)}
+
+top_p
+[auch bisschen höher, aber tiefer als generate; weil schon rel. gezielt Feedback einbauen]
+
+top_k
+[siehe oben]
+
+penalties: ist es nötig? hmmmmmmmm 
+--------------------------------------------------------------------------------
+
+generell: max_tokens -> context window mit einbeziehen (wenn's überhaupt was ausmacht), sonst max. setzen damit prompt nicht zu lang wird... (basierend auf vergangenen prompts)

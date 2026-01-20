@@ -1,0 +1,81 @@
+MODELLPARAMETER
+--------------
+
+Than et al.:
+"For all tests,
+we set a seed and set the temperature parameter to 0 to minimize output vari
+ation and to enhance reliability and reproducibility, and we set the context
+window to the maximum allowed for each model.""
+--------------------------------------------------------------------------------
+Törnberg: 
+"Tweaking these settings are important to improve reliability and desirability of 
+responses, and it may take some experimentation to figure out the appropriate settings for your 
+use cases. The following list shows some common settings you may come across when using 
+LLMs: 
+• Max Length – Sets the maximal number of tokens the model generates. Specifying a 
+max length allows you to control costs, and prevent long or irrelevant responses. 
+• Temperature – The temperature parameter controls how random the model output is, 
+essentially increasing the weights of all other possible tokens. Low temperature leads to 
+more deterministic results, while high temperature leads to more randomness, that is, 
+more diverse or creative outputs. For data annotation, a lower temperature is usually 
+recommended, such as 0. 
+• Top-P: Adjusts the range of considered tokens. A low Top P ensures precise, confident 
+responses, while a higher value promotes diversity by including less likely tokens. For 
+data annotation, a lower Top-P is usually recommended, such as 0.2 to 0.4. If using Top
+P, your temperature must be above 0. 
+• Top-K: The top-k parameter limits the model’s predictions to the top-k most probable 
+tokens. By setting a value for top-k, you can thereby limit the model to only considering 
+the most likely tokens. 
+Your parameters must always be explicitly specified – even if they are the default parameters – 
+as this is necessary for reproducibility."
+
+--------------------------------------------------------------------------------
+
+ELLMER https://ellmer.tidyverse.org/reference/params.html
+
+temperature
+Temperature of the sampling distribution.
+
+top_p
+The cumulative probability for token selection.
+
+top_k
+The number of highest probability vocabulary tokens to keep.
+
+frequency_penalty
+Frequency penalty for generated tokens.
+
+presence_penalty
+Presence penalty for generated tokens.
+
+seed
+Seed for random number generator.
+
+max_tokens
+Maximum number of tokens to generate.
+
+log_probs
+Include the log probabilities in the output?
+
+stop_sequences
+A character vector of tokens to stop generation on.
+
+reasoning_effort, reasoning_tokens
+How much effort to spend thinking? ressoning_effort is a string, like "low", "medium", "high". reasoning_tokens is an integer, giving a maximum token budget. Each provider only takes one of these two parameters.
+
+--> also alle spezifizieren.... 
+--------------------------------------------------------------------------------
+ Parameter meta-llama/Llama-3.1-8B-Instruct (https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct/)
+ 
+max_tokens; default 256 
+tempereature; default 0.6 / min 0 max 5
+top_p => default = NULL / min 0 max 2
+top_k => default = 0 / min 1 max 50
+seed; min 1 max 9999999999
+repetition_penatly =>default = NULL / min 0 max 2
+frequency_penalty => default = NULL / min 0 max 2
+presence_penalty > default = NULL / min 0 max 2
+
+context window = total nr of tokens model can consider at once (input and output tokens)
+context window = 7968 tokens
+1 Token = 0.75 Wörter (englisch) 

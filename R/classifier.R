@@ -55,7 +55,7 @@ extract_json <- function(x) {
 # Classifier Function ----------------------------------------------------------
 
 classifier <- function(article_text, prompt, chat_object = hf_model,
-                       max_attempts = 3, sleep_sec = 5){ #weiss nicht wieviel von beidem sinvoll ist, muss geprüft werden!!!
+                       max_attempts = 3, sleep_sec = 5){ 
 
  attempt <- 1
  while(attempt <= max_attempts) {

@@ -32,6 +32,39 @@ Ergebnisse 1. Promptgenerierung:
 }
 ```
 
+6) wieder alte system prompt und temp = 0.1
+Hier ist der generierte Task-Prompt:
+
+**Task-Prompt:**
+
+**Modellrolle:** Schweizer Politik-Experte für politische Kommunikation
+**Task:** Inhaltsanalyse von Schweizer Medienartikeln zur Schweizerischen Masseneinwanderungsinitiative von 2014
+**Anwendbares Codebuch:** FRAMES (siehe unten)
+**Ausgabeformat:** JSON mit 'code' und 'reasoning'
+
+**Aufgabenbeschreibung:**
+
+Lies den Artikel sorgfältig und reflektiere kurz, ob und wie jede der 5 Frame-Kategorien im Artikel selbst vorkommt. Codiere den dominanten Frame und gib nur den Namen der Kategorie zurück.
+
+**FRAMES:**
+
+1. Wirtschaftliche Bedrohung: stellt Einwanderung als Belastung für die Wirtschaft, den Arbeitsmarkt oder die Sozialleistungen dar
+2. Wirtschaftlicher Nutzen: stellt Einwanderung als wirtschaftlich vorteilhaft oder notwendig dar
+3. Kulturelle Bedrohung: suggeriert, dass Einwanderung die Schweizer Identität oder Werte bedroht
+4. Sicherheit: verbindet Einwanderung mit Kriminalität, Terrorismus oder Instabilität
+5. Humanitär: stellt Migranten als Opfer dar, die Mitgefühl oder Unterstützung verdienen
+
+**Ausgabe:**
+
+Gib die Antwort in JSON-Format zurück, mit folgenden Feldern:
+
+* `code`: der dominante Frame (eine der 5 Kategorien)
+* `reasoning`: kurze Begründung auf max. 50 Zeichen, warum dieser Frame dominant ist.
+
+##wieder gut??? obwohl nur minimal angepasst??? (dont include an introductory sentence like "Here's the generated task prompt")
+
+==> so lassen weil bestes ergebnis? und dann mit feedback anpassen? aber schon shit weil das soll ja wirklich bei keiner prompt rein also kännte man's super über system prompt regeln ????'
+
 **Sprachregeln:**
 
 * Verwende nur die im Codebook definierten Frames.
@@ -146,3 +179,69 @@ Gib die Antwort in JSON-Format mit den folgenden Feldern zurück:
 
 
 ==> Fazit, 0.0 am besten, versuche mal 0.1 (dann könnten evtl. auch top_p und top_k inkl. werden)
+
+
+4) temp = 0.1
+
+Hier ist der generierte Task-Prompt:
+
+**Task-Prompt:**
+
+Du bist Experte für Schweizer Politik und politische Kommunikation. Durchführe eine Inhaltsanalyse zur Schweizerischen Masseneinwanderungsinitiative von 2014. Analysiere Schweizer Medienartikel aus dem Zeitraum der Initiative und kodiere den dominanten Frame nach den folgenden Kategorien:
+
+- Wirtschaftliche Bedrohung
+- Wirtschaftlicher Nutzen
+- Kulturelle Bedrohung
+- Sicherheit
+- Humanitär
+
+**Schritte:**
+
+1. Lies den Artikel sorgfältig.
+2. Reflektiere kurz, ob und wie jede der 5 Frame-Kategorien im Artikel selbst vorkommt.
+3. Codiere den dominanten Frame und gib nur den Namen der Kategorie zurück.
+
+**Codebook:**
+
+Verwende das folgende Codebook zur Frame-Kodierung:
+
+1. Wirtschaftliche Bedrohung: Einwanderung als Belastung für die Wirtschaft, den Arbeitsmarkt oder die Sozialleistungen.
+2. Wirtschaftlicher Nutzen: Einwanderung als wirtschaftlich vorteilhaft oder notwendig.
+3. Kulturelle Bedrohung: Einwanderung als Bedrohung der Schweizer Identität oder Werte.
+4. Sicherheit: Einwanderung mit Kriminalität, Terrorismus oder Instabilität verbinden.
+5. Humanitär: Migranten als Opfer darstellen, die Mitgefühl oder Unterstützung verdienen.
+
+**Output-Format:**
+
+Gib die Antwort in JSON-Format zurück, mit den folgenden Feldern:
+
+- `code`: Der dominante Frame (Wirtschaftliche Bedrohung, Wirtschaftlicher Nutzen, Kulturelle Bedrohung, Sicherheit oder Humanitär)
+- `reasoning`: Eine kurze Begründung auf max. 50 Zeichen, die die Entscheidung für den dominanten Frame erklärt.
+
+##NOTES: bessere Struktur (Rolle, Task, Codebook, Outputformat)//alles dabei (ausser wieder das JSON bsp, aber geht auch ohne. )
+aber "Hier ist der generierte Task-Prompt:" muss weg ==> system prompt
+
+
+5) 0.1 und überarbeitete system rompt
+
+Analyse eines Schweizer Medienartikels zur Masseneinwanderungsinitiative 2014:
+
+Analyse-Aufgabe: 
+- Rolle des Modells: Inhaltsanalyse eines Schweizer Medienartikels zur Masseneinwanderungsinitiative 2014
+- Beschreibung der Aufgabe: Codierung des dominanten Frames im Artikel nach den 5 Frame-Kategorien
+- Anwendbares Codebuch: Frames-Kategorien (Wirtschaftliche Bedrohung, Wirtschaftlicher Nutzen, Kulturelle Bedrohung, Sicherheit, Humanitär)
+- Anforderungen an die Ausgabe: JSON-Format mit 'code' und 'reasoning' (kurze Begründung auf max. 50 Zeichen)
+
+Beispielartikel: [Eingabe des Artikel-Textes]
+
+Gib die Antwort in JSON-Format zurück: 
+{
+  "code": [Dominanter Frame],
+  "reasoning": [Kurze Begründung]
+}
+
+?????? was ist denn jetzt wieder passiert 
+
+
+es wird irgendwie immer schlimmer auch mit 0.0 help
+ist seed nicht korrekt??? 

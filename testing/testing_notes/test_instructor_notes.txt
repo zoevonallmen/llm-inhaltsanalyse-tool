@@ -49,3 +49,100 @@ NOTES: Sprachregeln und Unsicherheiten wurden vorab nicht definiert, vom Modell 
 
 Optimierung: Feedback eingrführt; Fazit: Mechansmus funktioniert. 
 ==> ABER: unbedingt Systemprompt anpassen.....
+
+
+-------------------------------------------------------------------------------
+Test temperatures
+
+1) temp = 0.7
+Hier ist ein Task-Prompt basierend auf den bereitgestellten Informationen:
+
+**Task-Prompt:**
+
+"Analyse den gegebenen Text-Input, der aus Schweizer Medienartikeln aus dem Zeitraum der Masseneinwanderungsinitiative 2014 besteht. Verwende die Frames-Kategorien aus dem Codebook (Wirtschaftliche Bedrohung, Wirtschaftlicher Nutzen, Kulturelle Bedrohung, Sicherheit, Humanitär) und identifiziere den dominanten Frame in jedem Artikel.
+
+1. Lies den Artikel sorgfältig.
+2. Reflektiere kurz, ob und wie jede der 5 Frame-Kategorien im Artikel selbst vorkommt.
+3. Codiere den dominanten Frame und gib den Namen der Kategorie (ohne weitere Erklärungen) zurück.
+
+Gib die Antwort in JSON-Format mit 'code' und 'reasoning' zurück. Die kurze Begründung sollte nicht länger als 50 Zeichen sein.
+
+**Eingabewerte:**
+
+* Text-Input: Schweizer Medienartikel im Zeitraum der Masseneinwanderungsinitiative 2014
+* Codebook: FRAMES-Kategorien (s. oben)
+* Ausgabe-Format: JSON mit 'code' und 'reasoning'$
+
+##NOTES: keine Frame Kategorien aufgezählt? / eher eine ZSMf der Anweisungen, Rollenzuweisung ignoriert, kein Bsp für Struktur => zu weit weg von den Anweisungen. 
+
+2) temp = 0.3
+Hier ist der generierte Task-Prompt:
+
+**Task-Prompt:**
+
+* **Modell-Role:** Expert für Schweizer Politik und politische Kommunikation
+* **Task:** Durchführen einer Inhaltsanalyse zur Schweizerischen Masseneinwanderungsinitiative von 2014
+* **Anwendbares Codebook:** Frames-Kategorien (siehe Codebook)
+* **Eingabe:** Schweizer Medienartikel im Zeitraum der Initiative
+* **Ausgabe-Format:** JSON mit 'code' und 'reasoning'
+
+**Aufgabenbeschreibung:**
+
+Lies den Artikel sorgfältig und reflektiere kurz, ob und wie jede der 5 Frame-Kategorien im Artikel selbst vorkommt. Codiere den dominanten Frame und gib nur den Namen der Kategorie zurück: 'Wirtschaftliche Bedrohung', 'Wirtschaftlicher Nutzen', 'Kulturelle Bedrohung', 'Sicherheit', 'Humanitär'.
+
+**JSON-Ausgabe:**
+
+```
+{
+  "code": [Name der dominanten Frame-Kategorie],
+  "reasoning": [Kurze Begründung auf max. 50 Zeichen]
+}
+```
+
+Beispiel-Ausgabe:
+```
+{
+  "code": "Wirtschaftliche Bedrohung",
+  "reasoning": "Der Artikel suggeriert, dass Einwanderung die Schweizer Wirtschaft belastet."
+}
+
+##NOTES: zwar besser weil Taskbeschrieb, Rolle u Bsp-Ausgabe inkl. aber immer noch keine Frame Kategorien ("siehe Codebook")
+
+
+
+3) temp = 0.0
+
+Hier ist der generierte Task-Prompt:
+
+**Task-Prompt:**
+
+Du bist Experte für Schweizer Politik und politische Kommunikation. Durchführe eine Inhaltsanalyse der Schweizerischen Masseneinwanderungsinitiative von 2014 anhand von Schweizer Medienartikeln aus dem Zeitraum der Initiative.
+
+**Aufgabenbeschreibung:**
+
+1. Lies den Artikel sorgfältig.
+2. Reflektiere kurz, ob und wie jede der 5 Frame-Kategorien ('Wirtschaftliche Bedrohung', 'Wirtschaftlicher Nutzen', 'Kulturelle Bedrohung', 'Sicherheit', 'Humanitär') im Artikel selbst vorkommt.
+3. Codiere den dominanten Frame und gib nur den Namen der Kategorie zurück.
+
+**Anwendbares Codebuch:**
+
+Verwende das Codebuch "FRAMES" mit den folgenden Kategorien:
+
+1. Wirtschaftliche Bedrohung: stellt Einwanderung als Belastung für die Wirtschaft, den Arbeitsmarkt oder die Sozialleistungen dar
+2. Wirtschaftlicher Nutzen: stellt Einwanderung als wirtschaftlich vorteilhaft oder notwendig dar
+3. Kulturelle Bedrohung: suggeriert, dass Einwanderung die Schweizer Identität oder Werte bedroht
+4. Sicherheit: verbindet Einwanderung mit Kriminalität, Terrorismus oder Instabilität
+5. Humanitär: stellt Migranten als Opfer dar, die Mitgefühl oder Unterstützung verdienen
+
+**Ausgabeformat:**
+
+Gib die Antwort in JSON-Format mit den folgenden Feldern zurück:
+
+* `code`: der dominante Frame (Name der Kategorie)
+* `reasoning`: kurze Begründung auf max. 50 Zeichen
+
+
+#NOTES: Rolle & Task da, Frames auch da, kein BSP für Ausgabeformat... // aber hat auch vorhin ohne geklappt
+
+
+==> Fazit, 0.0 am besten, versuche mal 0.1 (dann könnten evtl. auch top_p und top_k inkl. werden)

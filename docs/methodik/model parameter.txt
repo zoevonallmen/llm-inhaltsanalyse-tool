@@ -96,6 +96,8 @@ context window = total nr of tokens model can consider at once (input and output
 context window = 7968 tokens
 1 Token = 0.75 Wörter (englisch) 
 
+
+=> https://www.vellum.ai/llm-parameters/max-tokens?utm_source=google&utm_medium=organic
 --------------------------------------------------------------------------------
 PARAMETER CLASSIFIER:
 
@@ -129,23 +131,27 @@ penalties = not necessary/soll keine Bestrafung für Wortwiederholungen/Themenwi
 PARAMETER INSTRUCTOR (GENERATE)
 
 temperature
-[experimentieren, versch. versuchen, aber tendentiell eher höher weil einfach generieren, kreativ, ...]
+[experimentieren, versch. versuchen, aber tendentiell eher höher weil einfach generieren, kreativ, ... aber niedriger weil vorgaben codebook dürfen nicht ingnoriert werden... ausrbobierem]
+vergl. 0, 0.3, 0.6
 
 top_p
 [auch eher höher, versuch mal ganz hoch, mittel tief]
+...
 
 top_k 
 [eigentlich schon durch top_p gegeben? evtl einfach default (NULL) belassen]
+...
 
 seed
 [um parameter zu testen, danach kann's raus]
 
-penatlies könnten evtl nützlich sein; new topics ja eher nicht intriducen; keine wiederholungen (token max)
+penalties: Begriffe müssen ja evtl. wiederholt werden, würd ich weglassen
 --------------------------------------------------------------------------------
 PARAMETER INSTRUCTOR (OPTIMIZE)
 
 temperature
-[auch eher paar Versuche machen, aber generell rel. tief (so 0.2? bisschen kreativ aber gezielt feedback?)}
+[auch eher paar Versuche machen, aber generell rel. tief (so 0.2? bisschen kreativ aber gezielt feedback?)
+vergl. 0, 0.2, 0.4
 
 top_p
 [auch bisschen höher, aber tiefer als generate; weil schon rel. gezielt Feedback einbauen]
@@ -153,7 +159,5 @@ top_p
 top_k
 [siehe oben]
 
-penalties: ist es nötig? hmmmmmmmm 
+penalties: würd ich auch eher sein lassen, sonst gefahr, dass es von vorgaben abweicht..
 --------------------------------------------------------------------------------
-
-generell: max_tokens -> context window mit einbeziehen (wenn's überhaupt was ausmacht), sonst max. setzen damit prompt nicht zu lang wird... (basierend auf vergangenen prompts)

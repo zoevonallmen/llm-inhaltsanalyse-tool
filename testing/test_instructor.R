@@ -14,14 +14,15 @@ test_instructions <-  paste(
   
 user_prompt_generate <- paste(
   c(
-    "KONTEXT:", test_instructions,
+    "<context>:", test_instructions,
     "",
-    "CODEBOOK:", test_codebook,
-    "",
-    "OUTPUT REQUIREMENTS:", "Gib die Antwort in JSON mit 'code' und 'reasoning' zurück; kurze Begründung auf max. 50 Zeichen."
+    "<codebook>:", test_codebook,
+    "output_requirements",
+    ":", "Gib die Antwort in JSON mit 'code' und 'reasoning' zurück; kurze Begründung auf max. 50 Zeichen."
   ),
   collapse = "\n"
 )
+
 
 prompt_v01 <- hf_instructor_generate$chat(user_prompt_generate)
 
@@ -30,24 +31,51 @@ cat(prompt_v01)
 
 # Test einfache Prompt-Optimierung ---------------------------------------------
 
+#alte "schlechte" prompt um verbesseurng zu testen
+prompt_v01 <- " 
+**Prompt für die Inhaltsanalyse der Schweizerischen Masseneinwanderungsinitiative 2014**
+
+**Role**: Du bist Experte für Schweizer Politik und politische Kommunikation.
+
+**Task**: Bitte kodiere den folgenden Text nach Frames, die während der Masseneinwanderungsinitiative verwendet wurden.
+
+**Text-Input**: [Hier wird der Text-Input eingegeben, z.B. ein Schweizer Medienartikel aus dem Jahr 2014]
+
+**Codebook**:
+Die folgenden 5 Frame-Kategorien sind relevant für die Analyse:
+1. Wirtschaftliche Bedrohung: Einwanderung als Belastung für die Wirtschaft, den Arbeitsmarkt oder die Sozialleistungen.
+2. Wirtschaftlicher Nutzen: Einwanderung als wirtschaftlich vorteilhaft oder notwendig.
+3. Kulturelle Bedrohung: Einwanderung als Bedrohung für die Schweizer Identität oder Werte.
+4. Sicherheit: Einwanderung mit Kriminalität, Terrorismus oder Instabilität verbinden.
+5. Humanitär: Migranten als Opfer darstellen, die Mitgefühl oder Unterstützung verdienen.
+
+**Format**: Bitte gib die Antwort in JSON-Format zurück, mit den folgenden Feldern:
+- `code`: Der dominant codierte Frame (einer der 5 oben genannten Kategorien).
+- `reasoning`: Eine kurze Begründung (max. 50 Zeichen) für die Auswahl des dominanten Frames.
+"
+
+
 feedback_text <- "
-- Ersetze vage Begriffe wie 'reflektiere' durch klare Entscheidungsregeln: 
-  Prüfe für jede Kategorie, ob Kriterien erfüllt sind, und wähle die Kategorie mit den meisten erfüllten Kriterien.
-- Operationalisiere den 'dominanten Frame': 
-  Eine Kategorie gilt als dominant, wenn der Text ein klares Beispiel oder eine konkrete Aussage enthält, die die Kategorie unterstützt und der Text keine Hinweise auf eine andere Kategorie enthält, die stärker unterstützt wird. 
-- Wenn der Text keiner Kategorie klar zugeordnet werden kann, wähle 'Keine Anwendung' als code.
-- Reasoning-Länge: maximal 2 kurze Sätze; wiederhole keine Definitionen aus dem Codebook.
+Sprachliche Konsistenz:
+- Problem: Mix aus deutscher Rollenbeschreibung und englischen JSON-Keys kann zu Fehlern im Output führen.
+- Änderung: Alle Felder auf Deutsch benennen.
+Vage Kategoriedefinitionen:
+- Problem: Begriffe wie 'Sicherheit' oder 'Wirtschaft' sind zu breit gefasst.
+- Änderung: Schlagworte (Indikatoren) für jede Kategorie im Codebook ergänzen (z.B. bei Wirtschaft: 'Lohndumping', 'Fachkräftemangel').
+Änderung: Begründungslimit auf 250 Zeichen erhöhen, um die Qualität der Argumentation beurteilen zu können.
+Fehlende Neutral-Kategorie:
+- Problem: Rein sachliche Berichte werden aktuell gezwungen, in ein politisches Schema zu passen.
+- Änderung: Kategorie '6. Neutral' hinzufügen.
 " #Beispielfeedback
+
 
 user_prompt_optimize <- paste(
   c(
-    "ORIGINAL KONTEXT:", test_instructions,
+    "<source_materials>", test_instructions, test_codebook,
     "",
-    "ORIGINAL CODEBOOK:", test_codebook,
+    "<current_prompt>", prompt_v01,
     "",
-    "CURRENT TASK PROMPT:", prompt_v01,
-    "",
-    "FEEDBACK:", feedback_text
+    "<feedback>", feedback_text
   ),
   collapse = "\n"
 )

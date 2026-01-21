@@ -59,7 +59,8 @@ Your task is to optimize an existing prompt. You will receive:
 </instructions>
 
 <output_format>
-Return ONLY the revised prompt text.
+Return only the final revised prompt in plain text. 
+Do NOT add any introductory headers that were not part or <current prompt>, such as '**Revised Prompt**'.
 </output_format>
 
 "

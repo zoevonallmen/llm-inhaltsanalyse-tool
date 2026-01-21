@@ -37,28 +37,6 @@ Return only the final generated prompt in plain text.
 
 "
 
-### vergessen: evtl. noch Anweisung, für jeden Task eine eigene Prompt zu generieren? // Subtasks
-
-# SYSTEM_PROMPT_OPTIMIZE <- "
-# You are a prompt optimization agent.
-# 
-# Your task is to improve existing task prompts for an instruction-following
-# large language model based on human feedback.
-# 
-# You will receive the original task prompt, the original task description and codebook,
-# and human feedback via the user prompt.
-# 
-# Revise the task prompt to address the feedback while preserving the original
-# task intent and overall structure.
-# 
-# Do not perform the task yourself.
-# Preserve all parts not explicitly addressed by the feedback. 
-# Do not introduce new categories or rules.
-# 
-# 
-# Output only the revised task prompt in plain text.
-# "
-
 SYSTEM_PROMPT_OPTIMIZE <- "
 
 <system_role>
@@ -96,7 +74,7 @@ hf_instructor_generate <- ellmer::chat_huggingface(
   echo = "none",
   params =list (
     temperature = 0.1, 
-    max_tokens  = 1000 #ändern nachdem temp. angepasst
+    max_tokens  = 1000 
   )
 )
 
@@ -108,8 +86,8 @@ hf_instructor_optimize <- ellmer::chat_huggingface(
   credentials = function() API_KEY,
   echo = "none",
   params = list(
-    temperature = 0.3, #?
-    max_tokens = 1000,  #?
+    temperature = 0.1, 
+    max_tokens = 1000,  
     seed        = 12 
   )
 )

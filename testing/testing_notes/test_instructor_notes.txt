@@ -1,81 +1,6 @@
 Ergebnisse 1. Promptgenerierung: 
 --------------------------------------------------------------------------------
 
-**Inhaltsanalyse-TASK-PROMPT**
-
-**Ziel:** Klassifiziere Schweizer Medienartikel aus dem Zeitraum der Masseneinwanderungsinitiative 2014 nach Frames.
-
-**Aufgabe:** Codiere den dominanten Frame pro Artikel.
-
-**Codebook:**
-
-### Frames:
-
-1. Wirtschaftliche Bedrohung: stellt Einwanderung als Belastung für die Wirtschaft, den Arbeitsmarkt oder die Sozialleistungen dar
-2. Wirtschaftlicher Nutzen: stellt Einwanderung als wirtschaftlich vorteilhaft oder notwendig dar
-3. Kulturelle Bedrohung: suggeriert, dass Einwanderung die Schweizer Identität oder Werte bedroht
-4. Sicherheit: verbindet Einwanderung mit Kriminalität, Terrorismus oder Instabilität
-5. Humanitär: stellt Migranten als Opfer dar, die Mitgefühl oder Unterstützung verdienen
-
-**Ausführung:**
-
-1. Lies den Artikel sorgfältig.
-2. Reflektiere kurz, ob und wie jede der 5 Frame-Kategorien im Artikel selbst vorkommt.
-3. Codiere den dominanten Frame und gib nur den Namen der Kategorie zurück.
-
-**Output-Format:**
-
-```json
-{
-  "code": "<Dominanter-Frame>",
-  "reasoning": "<Kurze-Begründung>"
-}
-```
-
-6) wieder alte system prompt und temp = 0.1
-Hier ist der generierte Task-Prompt:
-
-**Task-Prompt:**
-
-**Modellrolle:** Schweizer Politik-Experte für politische Kommunikation
-**Task:** Inhaltsanalyse von Schweizer Medienartikeln zur Schweizerischen Masseneinwanderungsinitiative von 2014
-**Anwendbares Codebuch:** FRAMES (siehe unten)
-**Ausgabeformat:** JSON mit 'code' und 'reasoning'
-
-**Aufgabenbeschreibung:**
-
-Lies den Artikel sorgfältig und reflektiere kurz, ob und wie jede der 5 Frame-Kategorien im Artikel selbst vorkommt. Codiere den dominanten Frame und gib nur den Namen der Kategorie zurück.
-
-**FRAMES:**
-
-1. Wirtschaftliche Bedrohung: stellt Einwanderung als Belastung für die Wirtschaft, den Arbeitsmarkt oder die Sozialleistungen dar
-2. Wirtschaftlicher Nutzen: stellt Einwanderung als wirtschaftlich vorteilhaft oder notwendig dar
-3. Kulturelle Bedrohung: suggeriert, dass Einwanderung die Schweizer Identität oder Werte bedroht
-4. Sicherheit: verbindet Einwanderung mit Kriminalität, Terrorismus oder Instabilität
-5. Humanitär: stellt Migranten als Opfer dar, die Mitgefühl oder Unterstützung verdienen
-
-**Ausgabe:**
-
-Gib die Antwort in JSON-Format zurück, mit folgenden Feldern:
-
-* `code`: der dominante Frame (eine der 5 Kategorien)
-* `reasoning`: kurze Begründung auf max. 50 Zeichen, warum dieser Frame dominant ist.
-
-##wieder gut??? obwohl nur minimal angepasst??? (dont include an introductory sentence like "Here's the generated task prompt")
-
-==> so lassen weil bestes ergebnis? und dann mit feedback anpassen? aber schon shit weil das soll ja wirklich bei keiner prompt rein also kännte man's super über system prompt regeln ????'
-
-**Sprachregeln:**
-
-* Verwende nur die im Codebook definierten Frames.
-* Verwende nur die im Beispiel gezeigten Auszüge als Referenz.
-* Verwende nur die im Beispiel gezeigten Outputs als Referenz.
-
-**Unsicherheit:**
-
-* Wenn du unsicher bist, welcher Frame dominanter ist, wähle den Frame, der am häufigsten vorkommt.
-* Wenn du unsicher bist, ob ein Frame vorhanden ist, wähle den Frame, der am wahrscheinlichsten ist.
-* Wenn du unsicher bist, wie du den Frame identifizieren sollst, wähle den Frame, der am einfachsten zu identifizieren ist.
 -----
 NOTES: Sprachregeln und Unsicherheiten wurden vorab nicht definiert, vom Modell generiert. 
 -----
@@ -240,8 +165,109 @@ Gib die Antwort in JSON-Format zurück:
   "reasoning": [Kurze Begründung]
 }
 
-?????? was ist denn jetzt wieder passiert 
+--------------------------------------------------------------------------------
 
 
-es wird irgendwie immer schlimmer auch mit 0.0 help
-ist seed nicht korrekt??? 
+SYSTEM PROMPT ANGEPASST (viel besser)
+
+1) temp = 0.1
+**Prompt für die Inhaltsanalyse der Schweizerischen Masseneinwanderungsinitiative 2014**
+
+**Role**: Du bist Experte für Schweizer Politik und politische Kommunikation.
+
+**Task**: Bitte kodiere den folgenden Text nach Frames, die während der Masseneinwanderungsinitiative verwendet wurden.
+
+**Text-Input**: [Hier wird der Text-Input eingegeben, z.B. ein Schweizer Medienartikel aus dem Jahr 2014]
+
+**Codebook**:
+Die folgenden 5 Frame-Kategorien sind relevant für die Analyse:
+1. Wirtschaftliche Bedrohung: Einwanderung als Belastung für die Wirtschaft, den Arbeitsmarkt oder die Sozialleistungen.
+2. Wirtschaftlicher Nutzen: Einwanderung als wirtschaftlich vorteilhaft oder notwendig.
+3. Kulturelle Bedrohung: Einwanderung als Bedrohung für die Schweizer Identität oder Werte.
+4. Sicherheit: Einwanderung mit Kriminalität, Terrorismus oder Instabilität verbinden.
+5. Humanitär: Migranten als Opfer darstellen, die Mitgefühl oder Unterstützung verdienen.
+
+**Format**: Bitte gib die Antwort in JSON-Format zurück, mit den folgenden Feldern:
+- `code`: Der dominant codierte Frame (einer der 5 oben genannten Kategorien).
+- `reasoning`: Eine kurze Begründung (max. 50 Zeichen) für die Auswahl des dominanten Frames.
+
+##NOTES: sehr gut strukturiert, Trennung INstruktion und daten --> beim Text-Input Feld muss ich noch beim Shiny App schauen wie 
+-> temp = 0.1 minimal flexibel, aber trotzdem das wichtigste drin. für Task prompt sehr geeignet (Strukturmässig) 
+
+2) temp = 0.3
+
+**Prompt für Inhaltsanalyse der Schweizerischen Masseneinwanderungsinitiative**
+
+**Role**: Ich bin ein Experte für Schweizer Politik und politische Kommunikation.
+
+**Task**: Bitte analysiere den gegebenen Text-Input aus Schweizer Medienartikeln im Zeitraum der Masseneinwanderungsinitiative von 2014 und kodiere den dominanten Frame nach den folgenden Kategorien:
+
+1. Wirtschaftliche Bedrohung
+2. Wirtschaftlicher Nutzen
+3. Kulturelle Bedrohung
+4. Sicherheit
+5. Humanitär
+
+**Codebook**:
+
+- **Wirtschaftliche Bedrohung**: Einwanderung als Belastung für die Wirtschaft, den Arbeitsmarkt oder die Sozialleistungen.
+- **Wirtschaftlicher Nutzen**: Einwanderung als wirtschaftlich vorteilhaft oder notwendig.
+- **Kulturelle Bedrohung**: Einwanderung als Bedrohung der Schweizer Identität oder Werte.
+- **Sicherheit**: Einwanderung mit Kriminalität, Terrorismus oder Instabilität verbinden.
+- **Humanitär**: Migranten als Opfer darstellen, die Mitgefühl oder Unterstützung verdienen.
+
+**Format**: Bitte gib die Antwort in JSON-Format zurück, mit den folgenden Feldern:
+
+- `code`: Der Name der dominanten Frame-Kategorie.
+- `reasoning`: Eine kurze Begründung auf max. 50 Zeichen, warum diese Kategorie gewählt wurde.
+
+##NOTES: Kategorien/Frames 2 mal... nicht ideal, einfach eher unstrukturierter / Rolle: "ICH bin Experte..."
+-> höhere Temp = mehr sprachl. Freiheit, eher natürliche Formulierung keine klar strukturierte Logik => nicht ideal
+
+
+3) temp = 0.0
+
+**Prompt:**
+
+Als Experte für Schweizer Politik und politische Kommunikation, analysiere den Text-Input aus Schweizer Medienartikeln im Zeitraum der Schweizerischen Masseneinwanderungsinitiative von 2014. Dein Ziel ist es, die Artikel nach Frames zu codieren.
+
+**Codebook:**
+
+1. Wirtschaftliche Bedrohung: Einwanderung als Belastung für die Wirtschaft, den Arbeitsmarkt oder die Sozialleistungen.
+2. Wirtschaftlicher Nutzen: Einwanderung als wirtschaftlich vorteilhaft oder notwendig.
+3. Kulturelle Bedrohung: Einwanderung als Bedrohung für die Schweizer Identität oder Werte.
+4. Sicherheit: Einwanderung mit Kriminalität, Terrorismus oder Instabilität verbinden.
+5. Humanitär: Migranten als Opfer darstellen, die Mitgefühl oder Unterstützung verdienen.
+
+**Format:**
+
+Gib die Antwort in JSON-Format zurück, mit den folgenden Feldern:
+
+* `code`: Der dominanten Frame-Kategorie (Wirtschaftliche Bedrohung, Wirtschaftlicher Nutzen, Kulturelle Bedrohung, Sicherheit, Humanitär)
+* `reasoning`: Eine kurze Begründung auf max. 50 Zeichen, warum du diese Kategorie gewählt hast.
+
+Beispiel-Antwort:
+```json
+{
+  "code": "Wirtschaftlicher Nutzen",
+  "reasoning": "Der Artikel betont die wirtschaftlichen Vorteile der Einwanderung."
+}
+```
+
+##NOTES: bsp antowrt gut, aber es ist weniger gut strukturiert..
+-> 0.0 = deterministisch, zu starr (system prompt kann nicht 1zu1 vorgeben, ein wneig flexibilität ist nötig aber nicht zu viel)
+
+
+==> FAZIT: Temp = 0.1
+niedrige, aber nicht-null Temperatur; zusätzl. Sampling-Parameter wie top_p oder top_k nicht setzen/default wählen, weil Output stabil, und bei Temperatur so nah an 0 vermutl kaum  relevanten Einfluss auf  Stabilität oder Qualität der Promptgenerierung hätte. => bei default parameter belassen/ nicht setzen. 
+--------------------------------------------------------------------------------
+
+TEST/ERGEBNISSE PROMPT OPTIMIERUNG
+----------------------------------
+
+
+1) temp = 0.0
+
+2) temp = 0.1
+
+3) temp = 0.3

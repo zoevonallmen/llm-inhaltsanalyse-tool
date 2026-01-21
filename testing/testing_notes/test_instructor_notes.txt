@@ -268,6 +268,91 @@ TEST/ERGEBNISSE PROMPT OPTIMIERUNG
 
 1) temp = 0.0
 
+**Revidierter Prompt**
+
+**Anleitung für die Inhaltsanalyse der Schweizerischen Masseneinwanderungsinitiative 2014**
+
+**Role**: Du bist Experte für Schweizer Politik und politische Kommunikation.
+
+**Task**: Kodiere den folgenden Text nach Frames, die während der Masseneinwanderungsinitiative verwendet wurden.
+
+**Text-Input**: [Hier wird der Text-Input eingegeben, z.B. ein Schweizer Medienartikel aus dem Jahr 2014]
+
+**Codebook**:
+Die folgenden 6 Frame-Kategorien sind relevant für die Analyse:
+1. Wirtschaftliche Bedrohung: Einwanderung als Belastung für die Wirtschaft, den Arbeitsmarkt oder die Sozialleistungen (z.B. Lohndumping, Fachkräftemangel).
+2. Wirtschaftlicher Nutzen: Einwanderung als wirtschaftlich vorteilhaft oder notwendig (z.B. Fachkräftegewinn, Wirtschaftswachstum).
+3. Kulturelle Bedrohung: Einwanderung als Bedrohung für die Schweizer Identität oder Werte (z.B. kulturelle Assimilation, Werteverfall).
+4. Sicherheit: Einwanderung mit Kriminalität, Terrorismus oder Instabilität verbinden (z.B. Kriminalitätsrate, Terrorismusgefahr).
+5. Humanitär: Migranten als Opfer darstellen, die Mitgefühl oder Unterstützung verdienen (z.B. Flüchtlinge, Menschenrechte).
+6. Neutral: Rein sachliche Berichte, die keine politische Meinung oder Wertung enthalten.
+
+**Format**: Bitte gib die Antwort in JSON-Format zurück, mit den folgenden Feldern:
+- `code`: Der dominant codierte Frame (einer der 6 oben genannten Kategorien).
+- `reasoning`: Eine detaillierte Begründung (max. 250 Zeichen) für die Auswahl des dominanten Frames.
+
 2) temp = 0.1
 
+**Revidierter Prompt**
+
+**Anleitung für die Inhaltsanalyse der Schweizerischen Masseneinwanderungsinitiative 2014**
+
+**Role**: Du bist Experte für Schweizer Politik und politische Kommunikation.
+
+**Task**: Kodiere den folgenden Text nach Frames, die während der Masseneinwanderungsinitiative verwendet wurden.
+
+**Text-Input**: [Hier wird der Text-Input eingegeben, z.B. ein Schweizer Medienartikel aus dem Jahr 2014]
+
+**Codebook**:
+Die folgenden 6 Frame-Kategorien sind relevant für die Analyse:
+1. Wirtschaftliche Bedrohung: Einwanderung als Belastung für die Wirtschaft, den Arbeitsmarkt oder die Sozialleistungen (z.B. Lohndumping, Fachkräftemangel).
+2. Wirtschaftlicher Nutzen: Einwanderung als wirtschaftlich vorteilhaft oder notwendig (z.B. Fachkräftegewinnung, Wirtschaftswachstum).
+3. Kulturelle Bedrohung: Einwanderung als Bedrohung für die Schweizer Identität oder Werte (z.B. kulturelle Assimilation, Werteverfall).
+4. Sicherheit: Einwanderung mit Kriminalität, Terrorismus oder Instabilität verbinden (z.B. Straftaten, Terrorismusgefahr).
+5. Humanitär: Migranten als Opfer darstellen, die Mitgefühl oder Unterstützung verdienen (z.B. Flüchtlinge, Menschenrechtsverletzungen).
+6. Neutral: Rein sachliche Berichte, die keine politische Meinung oder Wertung enthalten.
+
+**Format**: Bitte gib die Antwort in JSON-Format zurück, mit den folgenden Feldern:
+- `code`: Der dominant codierte Frame (einer der 6 oben genannten Kategorien).
+- `reasoning`: Eine ausführliche Begründung (max. 250 Zeichen) für die Auswahl des dominanten Frames.
+
 3) temp = 0.3
+
+**Revidierter Prompt**
+
+**Anleitung für die Inhaltsanalyse der Schweizerischen Masseneinwanderungsinitiative 2014**
+
+**Role**: Du bist Experte für Schweizer Politik und politische Kommunikation.
+
+**Task**: Kodiere den folgenden Text nach Frames, die während der Masseneinwanderungsinitiative verwendet wurden.
+
+**Text-Input**: [Hier wird der Text-Input eingegeben, z.B. ein Schweizer Medienartikel aus dem Jahr 2014]
+
+**Codebook**:
+Die folgenden 6 Frame-Kategorien sind relevant für die Analyse:
+1. Wirtschaftliche Bedrohung: Einwanderung als Belastung für die Wirtschaft, den Arbeitsmarkt oder die Sozialleistungen (z.B. Lohndumping, Fachkräftemangel).
+2. Wirtschaftlicher Nutzen: Einwanderung als wirtschaftlich vorteilhaft oder notwendig (z.B. Fachkräftegewinn, Wirtschaftswachstum).
+3. Kulturelle Bedrohung: Einwanderung als Bedrohung für die Schweizer Identität oder Werte (z.B. kulturelle Assimilation, Werteverfall).
+4. Sicherheit: Einwanderung mit Kriminalität, Terrorismus oder Instabilität verbinden (z.B. Kriminalitätsrate, Terrorismusgefahr).
+5. Humanitär: Migranten als Opfer darstellen, die Mitgefühl oder Unterstützung verdienen (z.B. Flüchtlinge, Menschenrechte).
+6. Neutral: Rein sachliche Berichte, die keine politische Meinung oder Wertung enthalten.
+
+**Format**: Bitte gib die Antwort in JSON-Format zurück, mit den folgenden Feldern:
+- `Dominanter Frame`: Der dominant codierte Frame (einer der 6 oben genannten Kategorien).
+- `Begründung`: Eine detaillierte Begründung (max. 250 Zeichen) für die Auswahl des dominanten Frames.
+
+-----
+FAZIT:
+------
+temp 0.0 und 0.3 gleich... einfach 0.3 hat auch alles auf deutsch gesetzt.. sonst kaum unterschiede; beide haben Feedback korrekt eingesetzt und den Rest beim Original belassen...
+=> temp = 0.1 ist wieder genau gleich wie temp 0.0
+macht irgendiiwe keinen grossen unterschied..
+alle outputs sind stabil. ich würde ebenfalls 0.1 (wie prompt generate) machen, weil sich dort gezeigt hat, dass 0.0 möglicherweise zu starr, und 0.3 zu flexibel ist / 0.1 minimale sprachliche Flexibilität. aber es funktioniert so oder so gut, Systemprompt gibt recht genau vor
+
+--------------------------------------------------------------------------------
+
+max_tokens für beide: 
+- generierte Prompt ist ug. 240 Tokens
+- aber: mehr Kategorien, ausführlichere Definitionen/Entscheidungsregeln, Beispiele usw...
+=> schon so um die 1000? aber ist ja nur eine Kostenbremse falls es versagt...
+oder 1500? UNterschied sehr sehr minimal. mal 1000

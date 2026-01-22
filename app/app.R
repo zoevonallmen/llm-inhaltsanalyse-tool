@@ -19,7 +19,7 @@ ui <- fluidPage(
         "task_description",
         "Aufgabenbeschrieb",
         rows = 4,
-        placeholder = "Art und Ziel der Analyse, etc."
+        placeholder = "Hier die Aufgabenbeschreibung eingeben..."
       ),
       
       textAreaInput(
@@ -31,7 +31,16 @@ ui <- fluidPage(
       
       actionButton("lock_inputs", "Inputs übernehmen"),
       
-      actionButton("run_instructor_generate", "Prompt generieren")
+      actionButton("run_instructor_generate", "Prompt generieren"),
+      
+      textAreaInput(
+        "optimizer_feedback",
+        "Feedback für Optimierung",
+        rows = 4,
+        placeholder = "Hier Feedback für die Prompt-Optimierung eingeben..."
+      ),
+      
+      actionButton("run_instructor_optimize", "Prompt optimieren")
     ),
     
     mainPanel(
@@ -131,6 +140,33 @@ server <- function(input, output, session) {
     
   }
   
+  #current_prompz holen für Optimizer
+  get_current_prompt <- function() {
+    key <- current_prompt_key()
+    req(key)
+    
+    versions <- prompt_versions()
+    req(versions[[key]])
+    
+    versions[[key]]
+  }
+  
+##PROMPTS IN XML (für Instructor Optimize)--------------------------------------
+  
+  build_optimizer_input_xml <- function(current_prompt, source_materials, feedback) {
+    source_materials <- paste0(
+      "<codebook>\n", comps$codebook, "\n</codebook>\n\n",
+      "<task_description>\n", comps$task_description, "\n</task_description>\n\n",
+      "<output_requirements>\n", comps$output_requirements, "\n</output_requirements>"
+    )
+    
+    paste0(
+      "<current_prompt>\n", current_prompt, "\n</current_prompt>\n\n",
+      "<source_materials>\n", source_materials, "\n</source_materials>\n\n",
+      "<feedback>\n", feedback, "\n</feedback>"
+    )
+  }
+  
 ##PROMPT GENERIERUNG (Instructor; Modus Generate) ------------------------------
   
   #Button: Prompt generieren (XML an instructor)
@@ -166,6 +202,29 @@ server <- function(input, output, session) {
     )
 
   })
+  
+##PROMPT OPTIMIERUNG (Instructor; Modus Optimize) ------------------------------
+  
+  observeEvent(input$run_instructor_optimize, {
+    comps <- prompt_components()
+    req(comps)
+    
+    feedback <- input$optimizer_feedback
+    req(nzchar(feedback))
+    
+    current_prompt <- get_current_prompt()
+    optimizer_input <- build_optimizer_input_xml(current_prompt, comps, feedback)
+    
+    optimized_prompt <- tryCatch(
+      hf_instructor_optimize$chat(optimizer_input, echo = "none"),
+      error = function(e) paste("ERROR", e$message)
+    )
+    
+    save_new_version(optimized_prompt)
+    
+  })
+  
+  
 }
 
 

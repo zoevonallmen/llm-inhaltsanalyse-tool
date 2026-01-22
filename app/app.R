@@ -53,8 +53,8 @@ ui <- fluidPage(
       # verbatimTextOutput("xml_prompt"),
       
       #Run Instructor Generate-Modus
-      h4("Generierter Task Prompt"),
-      verbatimTextOutput("instructor_generate_output")
+      h4("Aktuelle Task Prompt"),
+      verbatimTextOutput("current_prompt")
     )
   )
 )
@@ -153,8 +153,8 @@ server <- function(input, output, session) {
   
 ##PROMPTS IN XML (für Instructor Optimize)--------------------------------------
   
-  build_optimizer_input_xml <- function(current_prompt, source_materials, feedback) {
-    source_materials <- paste0(
+  build_optimizer_input_xml <- function(current_prompt, comps, feedback) {
+    source_materials_xml <- paste0(
       "<codebook>\n", comps$codebook, "\n</codebook>\n\n",
       "<task_description>\n", comps$task_description, "\n</task_description>\n\n",
       "<output_requirements>\n", comps$output_requirements, "\n</output_requirements>"
@@ -162,7 +162,7 @@ server <- function(input, output, session) {
     
     paste0(
       "<current_prompt>\n", current_prompt, "\n</current_prompt>\n\n",
-      "<source_materials>\n", source_materials, "\n</source_materials>\n\n",
+      "<source_materials>\n", source_materials_xml, "\n</source_materials>\n\n",
       "<feedback>\n", feedback, "\n</feedback>"
     )
   }
@@ -184,25 +184,7 @@ server <- function(input, output, session) {
     save_new_version(instructor_generated_prompt)
     
   })
-  
-  
-  #Instructor Output (Generierte Prompt) anzeigen (immer aktuelle/neuste Version)
-  output$instructor_generate_output <- renderText({
-    n <- prompt_version_n()
-    key <- current_prompt_key()
-    if (n == 0) return("Noch keine Prompt Version vorhanden")
-    
-    versions <- prompt_versions()
-    prompt_text <- versions[[key]]
-    
-    paste0(
-      "Aktuelle Prompt Version: ", key, "\n",
-      "-------------------------\n",
-      prompt_text
-    )
 
-  })
-  
 ##PROMPT OPTIMIERUNG (Instructor; Modus Optimize) ------------------------------
   
   observeEvent(input$run_instructor_optimize, {
@@ -223,6 +205,25 @@ server <- function(input, output, session) {
     save_new_version(optimized_prompt)
     
   })
+  
+  
+##AUSGABE GENERIERTER/OPTIMIERTER PROMPT (neuste Version) ----------------------
+  output$current_prompt <- renderText({
+    n <- prompt_version_n()
+    key <- current_prompt_key()
+    if (n == 0) return("Noch keine Prompt Version vorhanden")
+    
+    versions <- prompt_versions()
+    prompt_text <- versions[[key]]
+    
+    paste0(
+      "Aktuelle Prompt Version: ", key, "\n",
+      "-------------------------\n",
+      prompt_text
+    )
+
+  })
+
   
   
 }

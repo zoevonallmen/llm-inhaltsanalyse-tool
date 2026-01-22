@@ -154,7 +154,16 @@ server <- function(input, output, session) {
   output$instructor_generate_output <- renderText({
     n <- prompt_version_n()
     key <- current_prompt_key()
-    if (n == 0) return("Noch keine Prompt-Version vorhanden")
+    if (n == 0) return("Noch keine Prompt Version vorhanden")
+    
+    versions <- prompt_versions()
+    prompt_text <- versions[[key]]
+    
+    paste0(
+      "Aktuelle Prompt Version: ", key, "\n",
+      "-------------------------\n",
+      prompt_text
+    )
 
   })
 }

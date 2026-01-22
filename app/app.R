@@ -1,4 +1,6 @@
 library(shiny) 
+library(here)
+source(here::here("R", "instructor.R"))
 
 
 ui <- fluidPage(
@@ -27,16 +29,23 @@ ui <- fluidPage(
         placeholder = "JSON mit Feldern: code, reasoning"
       ),
       
-      actionButton("lock_inputs", "Inputs übernehmen")
+      actionButton("lock_inputs", "Inputs übernehmen"),
+      
+      actionButton("run_instructor_generate", "Prompt generieren")
     ),
     
     mainPanel(
+      #evt. später raus?
       h4("Prompt-Komponenten übernommen"),
       verbatimTextOutput("active_inputs"),
       
       #evt. später auch nicht anzeigen..
       h4("XML-Promptinputs für Instructor"),
-      verbatimTextOutput("xml_prompt")
+      verbatimTextOutput("xml_prompt"),
+      
+      #Run Instructor Generate-Modus
+      h4("Generierter Task Prompt"),
+      verbatimTextOutput("instructor_generate_output")
     )
   )
 )
@@ -47,6 +56,9 @@ server <- function(input, output, session) {
   
   #Reactive Values für Prompt-Komponenten
   prompt_components <- reactiveVal(NULL)
+  
+  #Reactive Values (Speichern) für Instructor Generate Output
+  instructor_generate_out <- reactiveVal(NULL)
   
   #Upload Codebook
   codebook_content <- reactive({
@@ -94,6 +106,28 @@ server <- function(input, output, session) {
     generate_instructor_prompt(comps)
   })
   
+  #Button: Prompt generieren (XML an instructor)
+  observeEvent(input$run_instructor_generate, {
+    comps <- prompt_components()
+    req(comps)
+    
+    xml <- generate_instructor_prompt(comps)
+    
+    instructor_generated_prompt <- tryCatch(
+      hf_instructor_generate$chat(xml, echo = "none"),
+      error = function(e) paste("ERROR", e$message)
+    )
+    
+    instructor_generate_out(instructor_generated_prompt)
+    
+  })
+  
+  #Instructor Output anzeigen
+  output$instructor_generate_output <- renderText({
+    out <- instructor_generate_out()
+    if (is.null(out)) return("Noch nicht generiert.")
+    out
+  })
 }
 
 

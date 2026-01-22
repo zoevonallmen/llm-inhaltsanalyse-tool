@@ -39,9 +39,9 @@ ui <- fluidPage(
       h4("Prompt-Komponenten übernommen"),
       verbatimTextOutput("active_inputs"),
       
-      #evt. später auch nicht anzeigen..
-      h4("XML-Promptinputs für Instructor"),
-      verbatimTextOutput("xml_prompt"),
+      # #evt. später auch nicht anzeigen..
+      # h4("XML-Promptinputs für Instructor"),
+      # verbatimTextOutput("xml_prompt"),
       
       #Run Instructor Generate-Modus
       h4("Generierter Task Prompt"),
@@ -53,6 +53,8 @@ ui <- fluidPage(
 
 
 server <- function(input, output, session) {
+  
+##INPUTS (Codebuch, Task Description, Output Requirements) ---------------------
   
   #Reactive Values für Prompt-Komponenten
   prompt_components <- reactiveVal(NULL)
@@ -78,7 +80,7 @@ server <- function(input, output, session) {
     ))
   })
   
-  #Anzeige übernommene Inputs für User
+  #Anzeige übernommene Inputs für User ==> kann dann evl später auch weg?
   output$active_inputs <- renderText({
     comps <- prompt_components()
     if(is.null(comps)) return("Noch keine Inputs übernommen.")
@@ -90,6 +92,9 @@ server <- function(input, output, session) {
     )
   })
   
+  
+##PROMPTS IN XML TAGS (für Instructor Generate) --------------------------------
+  
   #Generierung XML-Promptinputs für Instructor
   generate_instructor_prompt <- function(comps) {
     paste0(
@@ -99,12 +104,34 @@ server <- function(input, output, session) {
     )
   }
   
-  #XMLPrompt anzeigen // evtl. später rausnehmen zum schauen obs funktioniert
-  output$xml_prompt <- renderText({
-    comps <- prompt_components()
-    if(is.null(comps)) return("Noch keine Inputs übernommen.")
-    generate_instructor_prompt(comps)
-  })
+  # #XMLPrompt anzeigen // evtl. später rausnehmen zum schauen obs funktioniert
+  # output$xml_prompt <- renderText({
+  #   comps <- prompt_components()
+  #   if(is.null(comps)) return("Noch keine Inputs übernommen.")
+  #   generate_instructor_prompt(comps)
+  # })
+
+##VERSIONIERUNG DER PROMPTS ----------------------------------------------------
+  
+  prompt_versions <- reactiveVal(list())
+  prompt_version_n <- reactiveVal(0)
+  current_prompt_key <- reactiveVal(NULL)
+  
+  #neue Prompt als nächste Version speichern 
+  save_new_version <- function(prompt_text) {
+    n <- prompt_version_n() + 1
+    key <- sprintf("v%02d", n)
+    
+    versions <- prompt_versions()
+    versions[[key]] <- prompt_text
+    
+    prompt_versions(versions)
+    prompt_version_n(n)
+    current_prompt_key(key)
+    
+  }
+  
+##PROMPT GENERIERUNG (Instructor; Modus Generate) ------------------------------
   
   #Button: Prompt generieren (XML an instructor)
   observeEvent(input$run_instructor_generate, {
@@ -118,15 +145,17 @@ server <- function(input, output, session) {
       error = function(e) paste("ERROR", e$message)
     )
     
-    instructor_generate_out(instructor_generated_prompt)
+    save_new_version(instructor_generated_prompt)
     
   })
   
-  #Instructor Output anzeigen
+  
+  #Instructor Output (Generierte Prompt) anzeigen (immer aktuelle/neuste Version)
   output$instructor_generate_output <- renderText({
-    out <- instructor_generate_out()
-    if (is.null(out)) return("Noch nicht generiert.")
-    out
+    n <- prompt_version_n()
+    key <- current_prompt_key()
+    if (n == 0) return("Noch keine Prompt-Version vorhanden")
+
   })
 }
 

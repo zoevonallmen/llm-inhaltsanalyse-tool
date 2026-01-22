@@ -32,7 +32,11 @@ ui <- fluidPage(
     
     mainPanel(
       h4("Prompt-Komponenten übernommen"),
-      verbatimTextOutput("active_inputs")
+      verbatimTextOutput("active_inputs"),
+      
+      #evt. später auch nicht anzeigen..
+      h4("XML-Promptinputs für Instructor"),
+      verbatimTextOutput("xml_prompt")
     )
   )
 )
@@ -72,6 +76,22 @@ server <- function(input, output, session) {
       "\n\nOutput Requirements:\n", comps$output_requirements,
       "\n\nCodebook: hochgeladen"
     )
+  })
+  
+  #Generierung XML-Promptinputs für Instructor
+  generate_instructor_prompt <- function(comps) {
+    paste0(
+      "<codebook>\n", comps$codebook, "\n</codebook>\n\n",
+      "<task_description>\n", comps$task_description, "\n</task_description>\n\n",
+      "<output_requirements>\n", comps$output_requirements, "\n</output_requirements>"
+    )
+  }
+  
+  #XMLPrompt anzeigen // evtl. später rausnehmen zum schauen obs funktioniert
+  output$xml_prompt <- renderText({
+    comps <- prompt_components()
+    if(is.null(comps)) return("Noch keine Inputs übernommen.")
+    generate_instructor_prompt(comps)
   })
   
 }

@@ -1,6 +1,7 @@
 library(shiny) 
 library(shinythemes)
 library(here)
+
 source(here::here("R", "instructor.R"))
 source(here::here("R", "classifier.R"))
 
@@ -53,11 +54,12 @@ ui <- fluidPage(
       ),
       
       fileInput(
-        "doc_file",
-        "Testartikel hochladen"
+        "doc_files",
+        "Textinputs hochladen (CSV)",
+        accept = c(".csv") #sollten noch andere Formate erlaubt werden? 
       ),
       
-      actionButton("run_classifier", "Klassifizieren (Test)")
+      actionButton("run_classifier", "Klassifizieren")
     ),
     
     mainPanel(
@@ -65,20 +67,14 @@ ui <- fluidPage(
       h4("Prompt-Komponenten übernommen"),
       verbatimTextOutput("active_inputs"),
       
-      # #evt. später auch nicht anzeigen..
-      # h4("XML-Promptinputs für Instructor"),
-      # verbatimTextOutput("xml_prompt"),
-      
       #Run Instructor Generate-Modus
       h4("Aktuelle Task Prompt"),
       verbatimTextOutput("current_prompt"),
       
       h4("Klassifikation (test)"),
       verbatimTextOutput("classifier_output"),
-      
-      ##DEBUG
-      h4("Debug"),
-      verbatimTextOutput("debug_output")
+      tableOutput("classifier_table")
+    
       
     )
   )
@@ -126,11 +122,6 @@ server <- function(input, output, session) {
     )
   })
   
-  doc_text <- reactive({
-    req(input$doc_file)
-    paste(readLines(input$doc_file$datapath, encoding = "UTF-8"), collapse = "\n")
-  })
-  
   
 ##PROMPTS IN XML TAGS (für Instructor Generate) --------------------------------
   
@@ -142,13 +133,7 @@ server <- function(input, output, session) {
       "<output_requirements>\n", comps$output_requirements, "\n</output_requirements>"
     )
   }
-  
-  # #XMLPrompt anzeigen // evtl. später rausnehmen zum schauen obs funktioniert
-  # output$xml_prompt <- renderText({
-  #   comps <- prompt_components()
-  #   if(is.null(comps)) return("Noch keine Inputs übernommen.")
-  #   generate_instructor_prompt(comps)
-  # })
+
 
 ##VERSIONIERUNG DER PROMPTS ----------------------------------------------------
   
@@ -194,12 +179,29 @@ server <- function(input, output, session) {
     )
   })
   
-  #Speicher fürs letzte Klassifikationsergebnis
-  classifier_result <- reactiveVal(NULL)
+  #CSV einlesen
+  docs_list <- reactive({
+    req(input$doc_files)
+    
+    path <- input$doc_files$datapath
+    df <- read.csv(path, stringsAsFactors = FALSE)
+    
+    if (!"content" %in% names(df)) {
+      stop("CSV muss eine Spalte 'content' enthalten") #muss evtl. noch angepasst werden, wen nicht immer alle relevanten textspalten content heissen..
+    }
+    
+    texts <- df$content
+    texts <- texts[!is.na(texts) & nzchar(trimws(texts))]
+    
+    setNames(
+      as.list(texts),
+      paste0("row_", seq_along(texts))
+    )
+  })
   
-  ##DEBUG
-  debug_text <- reactiveVal("Noch kein Debug vorhanden.")
+## Batch Klassifikation Ergebnisse speichern------------------------------------
   
+  classifier_results <- reactiveVal(NULL)
   
 ##PROMPTS IN XML (für Instructor Optimize)--------------------------------------
   
@@ -259,92 +261,61 @@ server <- function(input, output, session) {
 ##KLASSIFIZIEREN ---------------------------------------------------------------
   
   observeEvent(input$run_classifier, {
-    req(input$doc_file)
-    
-    # prompt_text <- get_current_prompt()
-    # prompt_key <- current_prompt_key()
-    
     req(input$prompt_for_classifier)
     versions <- prompt_versions()
     prompt_key <- input$prompt_for_classifier
     prompt_text <- versions[[prompt_key]]
     req(prompt_text)
-
     
-    article_text <- doc_text()
-    req(nzchar(trimws(article_text)))
-    
-    # loop_results <- lapply(seq_along(artikel_für_loop), function(i) {
-    #   
-    #   hf_model <- ellmer::chat_huggingface(
-    #     system_prompt = SYSTEM_PROMPT_CLASSIFIER,
-    #     model = LLAMA_MODEL,
-    #     credentials = function() API_KEY,
-    #     params = list(
-    #       temperature = 0.0,
-    #       max_tokens  = 300,
-    #       seed        = 24
-    #     ),
-    #     echo = "none"
-    #   )
-    #   ==> später, bei mehreren Artikel
-    
-      res <- tryCatch(
-        classifier(
-          article_text = article_text,
-          prompt = prompt_text,
-          chat_object = hf_model
-      ),
-      error = function(e) list(
-        success = FALSE,
-        code = NA,
-        reasoning = NA,
-        raw = NA,
-        json = NA,
-        error = e$message
-      )
-    )
-      
-      debug_text(paste0(
-        "Prompt-Version: ", prompt_key, "\n\n",
-        "Prompt-Start:\n", substr(prompt_text, 1, 400), "\n\n",
-        "Article-Start:\n", substr(article_text, 1, 400), "\n\n",
-        "RES success: ", res$success, "\n",
-        "RES code: ", res$code, "\n\n",
-        "Reasoning-Start:\n",
-        substr(if (is.null(res$reasoning)) "" else res$reasoning, 1, 400), "\n\n",
-        "RAW-Start:\n",
-        substr(if (is.null(res$raw)) "" else res$raw, 1, 400)
-      ))
-      
-
-      
-    if (!is.list(res) || is.null(res$success)) {
-      classifier_result(list(
-        prompt_version = prompt_key,
-        doc_name       = input$doc_file$name,
-        success        = FALSE,
-        code           = NA,
-        reasoning      = NA,
-        raw            = NA,
-        error          = "Classifier hat kein gültiges Resultat geliefert"
-      ))
-      return()
-    }
-      
-      classifier_result(list(
-        prompt_version  = prompt_key,
-        doc_name        = input$doc_file$name,
-        # run           = i, => for later 
-        success         = isTRUE(res$success),
-        code            = res$code,
-        reasoning       = res$reasoning,
-        raw             = res$raw,
-        error           = res$error
-      ))
-    })
-    
+    docs <- docs_list()
+    req(length(docs) > 0)
   
+    results <- lapply(seq_along(docs), function(i) {
+      
+      article_text <- docs[[i]]
+      
+      hf_model <- ellmer::chat_huggingface(
+        system_prompt = SYSTEM_PROMPT_CLASSIFIER,
+        model = LLAMA_MODEL,
+        credentials = function() API_KEY,
+        params = list(
+          temperature = 0.0,
+          max_tokens  = 300,
+          seed        = 24
+        ),
+        echo = "none"
+      )
+        
+        start_time <- Sys.time()
+        
+        res <- tryCatch(
+          classifier(
+            article_text = article_text,
+            prompt = prompt_text,
+            chat_object = hf_model
+          ),
+          error = function(e) list(
+            success = FALSE, code = NA, reasoning = NA, raw = NA, json = NA, error = e$message
+          )
+        )
+        end_time <- Sys.time()
+        
+        data.frame(
+          row = i,
+          prompt_version = prompt_key,
+          success = isTRUE(res$success),
+          code = if (is.null(res$code)) NA else as.character(res$code),
+          reasoning = if (is.null(res$reasoning)) NA else as.character(res$reasoning),
+          latency_s = as.numeric(difftime(end_time, start_time, units = "secs")),
+          error = if (is.null(res$error)) NA else as.character(res$error),
+          stringsAsFactors = FALSE
+        )
+      })
+    
+    
+    classifier_results(do.call(rbind, results))
+    
+    })
   
 ##AUSGABE GENERIERTER/OPTIMIERTER PROMPT (neuste Version) ----------------------
   output$current_prompt <- renderText({
@@ -365,37 +336,18 @@ server <- function(input, output, session) {
 
 ##OUTPUT CLASSIFIER RESULTAT ---------------------------------------------------
   output$classifier_output <- renderText({
-    x <- classifier_result()
-    if (is.null(x)) {
-      return("Noch keine Klassifikation durchgeführt.")
-    }
-    
-    if (!isTRUE(x$success)) {
-      return(paste0(
-        "Datei: ", x$doc_name, "\n",
-        "Prompt-Version: ", x$prompt_version, "\n",
-        "Status: Error\n",
-        "Fehlermeldung: ", x$error, "\n\n",
-        "Rohantwort: ", x$raw
-      ))
-    }
+    df <- classifier_results()
+    if (is.null(df)) return("Noch keine Klassifikation durchgeführt.")
     
     paste0(
-      "Prompt Version: ", x$prompt_version, "\n",
-      "Dokument: ", x$doc_name, "\n",
-      "Erfolg: ", x$success, "\n",
-      "Code: \n", x$code, "\n\n",
-      "Begründung: ", x$reasoning, "\n"
-      )
-
+      "Dokumente: ", nrow(df), "\n",
+      "Erfolgreich: ", sum(df$success), "\n",
+      "Fehler: ", sum(!df$success)
+    )
   })
   
-  ##DEBUG OUTPUT -----------------------------------------------------------------
-  output$debug_output <- renderText({
-    debug_text()
-  })
   
-
+  
 }
 
 

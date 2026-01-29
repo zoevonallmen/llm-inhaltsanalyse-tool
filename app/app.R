@@ -1,10 +1,13 @@
 library(shiny) 
+library(shinythemes)
 library(here)
 source(here::here("R", "instructor.R"))
 source(here::here("R", "classifier.R"))
 
 
 ui <- fluidPage(
+  theme = shinytheme("cyborg"),
+  
   titlePanel("Inputs für Promptgenerierung"),
   
   sidebarLayout(
@@ -43,9 +46,15 @@ ui <- fluidPage(
       
       actionButton("run_instructor_optimize", "Prompt optimieren"),
       
+      selectInput(
+        "prompt_for_classifier",
+        "Prompt-Version für Klassifizierung auswählen",
+        choices = character(0)
+      ),
+      
       fileInput(
         "doc_file",
-        "Testartikel hochladen",
+        "Testartikel hochladen"
       ),
       
       actionButton("run_classifier", "Klassifizieren (Test)")
@@ -167,6 +176,19 @@ server <- function(input, output, session) {
     versions[[key]]
   }
   
+  #Dropdown für Prompt-Versionen im Classifier
+  observe({
+    versions <- prompt_versions()
+    keys <- names(versions)
+    
+    updateSelectInput(
+      session,
+      "prompt_for_classifier",
+      choices = keys,
+      selected = current_prompt_key()
+    )
+  })
+  
   #Speicher fürs letzte Klassifikationsergebnis
   classifier_result <- reactiveVal(NULL)
   
@@ -230,8 +252,14 @@ server <- function(input, output, session) {
   observeEvent(input$run_classifier, {
     req(input$doc_file)
     
-    prompt_text <- get_current_prompt()
-    prompt_key <- current_prompt_key()
+    # prompt_text <- get_current_prompt()
+    # prompt_key <- current_prompt_key()
+    
+    req(input$prompt_for_classifier)
+    versions <- prompt_versions()
+    prompt_key <- input$prompt_for_classifier
+    prompt_text <- versions[[prompt_key]]
+    req(prompt_text)
     
     article_text <- doc_text()
     req(nzchar(trimws(article_text)))

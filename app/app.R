@@ -74,7 +74,12 @@ ui <- fluidPage(
       verbatimTextOutput("current_prompt"),
       
       h4("Klassifikation (test)"),
-      verbatimTextOutput("classifier_output")
+      verbatimTextOutput("classifier_output"),
+      
+      ##DEBUG
+      h4("Debug"),
+      verbatimTextOutput("debug_output")
+      
     )
   )
 )
@@ -192,6 +197,10 @@ server <- function(input, output, session) {
   #Speicher fürs letzte Klassifikationsergebnis
   classifier_result <- reactiveVal(NULL)
   
+  ##DEBUG
+  debug_text <- reactiveVal("Noch kein Debug vorhanden.")
+  
+  
 ##PROMPTS IN XML (für Instructor Optimize)--------------------------------------
   
   build_optimizer_input_xml <- function(current_prompt, comps, feedback) {
@@ -260,6 +269,7 @@ server <- function(input, output, session) {
     prompt_key <- input$prompt_for_classifier
     prompt_text <- versions[[prompt_key]]
     req(prompt_text)
+
     
     article_text <- doc_text()
     req(nzchar(trimws(article_text)))
@@ -278,7 +288,7 @@ server <- function(input, output, session) {
     #     echo = "none"
     #   )
     #   ==> später, bei mehreren Artikel
-      
+    
       res <- tryCatch(
         classifier(
           article_text = article_text,
@@ -294,6 +304,20 @@ server <- function(input, output, session) {
         error = e$message
       )
     )
+      
+      debug_text(paste0(
+        "Prompt-Version: ", prompt_key, "\n\n",
+        "Prompt-Start:\n", substr(prompt_text, 1, 400), "\n\n",
+        "Article-Start:\n", substr(article_text, 1, 400), "\n\n",
+        "RES success: ", res$success, "\n",
+        "RES code: ", res$code, "\n\n",
+        "Reasoning-Start:\n",
+        substr(if (is.null(res$reasoning)) "" else res$reasoning, 1, 400), "\n\n",
+        "RAW-Start:\n",
+        substr(if (is.null(res$raw)) "" else res$raw, 1, 400)
+      ))
+      
+
       
     if (!is.list(res) || is.null(res$success)) {
       classifier_result(list(
@@ -365,7 +389,12 @@ server <- function(input, output, session) {
       )
 
   })
-
+  
+  ##DEBUG OUTPUT -----------------------------------------------------------------
+  output$debug_output <- renderText({
+    debug_text()
+  })
+  
 
 }
 

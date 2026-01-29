@@ -269,8 +269,10 @@ server <- function(input, output, session) {
     
     docs <- docs_list()
     req(length(docs) > 0)
-  
-    results <- lapply(seq_along(docs), function(i) {
+    
+    withProgress(message = "Batch-Klassifikation läuft...", value = 0, {
+      results <- lapply(seq_along(docs), function(i) {
+        incProgress(1/length(docs), detail = paste("Dokument", i))
       
       article_text <- docs[[i]]
       
@@ -298,6 +300,7 @@ server <- function(input, output, session) {
             success = FALSE, code = NA, reasoning = NA, raw = NA, json = NA, error = e$message
           )
         )
+        
         end_time <- Sys.time()
         
         data.frame(
@@ -311,6 +314,7 @@ server <- function(input, output, session) {
           stringsAsFactors = FALSE
         )
       })
+    })
     
     
     classifier_results(do.call(rbind, results))
@@ -344,6 +348,12 @@ server <- function(input, output, session) {
       "Erfolgreich: ", sum(df$success), "\n",
       "Fehler: ", sum(!df$success)
     )
+  })
+  
+  output$classifier_table <- renderTable({
+    df <- classifier_results()
+    if (is.null(df)) return(NULL)
+    df
   })
   
   

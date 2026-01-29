@@ -1,6 +1,7 @@
 library(shiny) 
 library(here)
 source(here::here("R", "instructor.R"))
+source(here::here("R", "classifier.R"))
 
 
 ui <- fluidPage(
@@ -40,7 +41,14 @@ ui <- fluidPage(
         placeholder = "Hier Feedback für die Prompt-Optimierung eingeben..."
       ),
       
-      actionButton("run_instructor_optimize", "Prompt optimieren")
+      actionButton("run_instructor_optimize", "Prompt optimieren"),
+      
+      fileInput(
+        "doc_file",
+        "Testartikel hochladen",
+      ),
+      
+      actionButton("run_classifier", "Klassifizieren (Test)")
     ),
     
     mainPanel(
@@ -54,7 +62,10 @@ ui <- fluidPage(
       
       #Run Instructor Generate-Modus
       h4("Aktuelle Task Prompt"),
-      verbatimTextOutput("current_prompt")
+      verbatimTextOutput("current_prompt"),
+      
+      h4("Klassifikation (test)"),
+      verbatimTextOutput("classifier_output")
     )
   )
 )
@@ -63,7 +74,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
-##INPUTS (Codebuch, Task Description, Output Requirements) ---------------------
+##INPUTS (Codebuch, Task Description, Output Requirements, Textinputs) ---------
   
   #Reactive Values für Prompt-Komponenten
   prompt_components <- reactiveVal(NULL)
@@ -99,6 +110,11 @@ server <- function(input, output, session) {
       "\n\nOutput Requirements:\n", comps$output_requirements,
       "\n\nCodebook: hochgeladen"
     )
+  })
+  
+  doc_text <- reactive({
+    req(input$doc_file)
+    paste(readLines(input$doc_file$datapath, encoding = "UTF-8"), collapse = "\n")
   })
   
   
@@ -150,6 +166,9 @@ server <- function(input, output, session) {
     
     versions[[key]]
   }
+  
+  #Speicher fürs letzte Klassifikationsergebnis
+  classifier_result <- reactiveVal(NULL)
   
 ##PROMPTS IN XML (für Instructor Optimize)--------------------------------------
   
@@ -206,6 +225,61 @@ server <- function(input, output, session) {
     
   })
   
+##KLASSIFIZIEREN ---------------------------------------------------------------
+  
+  observeEvent(input$run_classifier, {
+    req(input$doc_file)
+    
+    prompt_text <- get_current_prompt()
+    prompt_key <- current_prompt_key()
+    
+    article_text <- doc_text()
+    req(nzchar(trimws(article_text)))
+    
+    # loop_results <- lapply(seq_along(artikel_für_loop), function(i) {
+    #   
+    #   hf_model <- ellmer::chat_huggingface(
+    #     system_prompt = SYSTEM_PROMPT_CLASSIFIER,
+    #     model = LLAMA_MODEL,
+    #     credentials = function() API_KEY,
+    #     params = list(
+    #       temperature = 0.0,
+    #       max_tokens  = 300,
+    #       seed        = 24
+    #     ),
+    #     echo = "none"
+    #   )
+    #   ==> später, bei mehreren Artikel
+      
+      res <- tryCatch(
+        classifier(
+          article_text = article_text,
+          prompt = prompt_text,
+          chat_object = hf_model
+      ),
+      error = function(e) list(
+        success = FALSE,
+        code = NA,
+        reasoning = NA,
+        raw = NA,
+        json = NA,
+        error = e$message
+      )
+    )
+      
+      classifier_result(list(
+        prompt_version  = prompt_key,
+        doc_name        = input$doc_file$name,
+        # run           = i, => for later 
+        success         = isTRUE(res$success),
+        code            = res$code,
+        reasoning       = res$reasoning,
+        raw             = res$raw,
+        error           = res$error
+      ))
+    })
+    
+  
   
 ##AUSGABE GENERIERTER/OPTIMIERTER PROMPT (neuste Version) ----------------------
   output$current_prompt <- renderText({
@@ -224,10 +298,35 @@ server <- function(input, output, session) {
 
   })
 
-  
-  
-}
+##OUTPUT CLASSIFIER RESULTAT ---------------------------------------------------
+  output$classifier_output <- renderText({
+    x <- classifier_result()
+    if (is.null(x)) {
+      return("Noch keine Klassifikation durchgeführt.")
+    }
+    
+    if (!isTRUE(x$success)) {
+      return(paste0(
+        "Datei: ", x$doc_name, "\n",
+        "Prompt-Version: ", x$prompt_version, "\n",
+        "Status: Error\n",
+        "Fehlermeldung: ", x$error, "\n\n",
+        "Rohantwort: ", x$raw
+      ))
+    }
+    
+    paste0(
+      "Prompt Version: ", x$prompt_version, "\n",
+      "Dokument: ", x$doc_name, "\n",
+      "Erfolg: ", x$success, "\n",
+      "Code: \n", x$code, "\n\n",
+      "Begründung: ", x$reasoning, "\n"
+      )
 
+  })
+
+
+}
 
 
 shinyApp(ui = ui, server = server) 

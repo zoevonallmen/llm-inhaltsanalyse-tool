@@ -267,6 +267,19 @@ server <- function(input, output, session) {
       )
     )
       
+    if (!is.list(res) || is.null(res$success)) {
+      classifier_result(list(
+        prompt_version = prompt_key,
+        doc_name       = input$doc_file$name,
+        success        = FALSE,
+        code           = NA,
+        reasoning      = NA,
+        raw            = NA,
+        error          = "Classifier hat kein gültiges Resultat geliefert"
+      ))
+      return()
+    }
+      
       classifier_result(list(
         prompt_version  = prompt_key,
         doc_name        = input$doc_file$name,

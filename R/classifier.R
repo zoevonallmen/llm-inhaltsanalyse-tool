@@ -7,18 +7,6 @@ library(stringr)
 LLAMA_MODEL <- "meta-llama/Llama-3.1-8B-Instruct"
 API_KEY <- Sys.getenv("HUGGINGFACE_API_KEY")
 
-# SYSTEM_PROMPT <- "
-# You are a text classification agent for social-science content analysis.
-# 
-# Your task is to classify text inputs strictly according to the instructions
-# provided in the user prompt.
-# 
-# Follow all provided instructions exactly.
-# Do not introduce new categories, interpretations, or external knowledge.
-# 
-# Output only the format specified in the user prompt and nothing else.
-# "
-
 SYSTEM_PROMPT_CLASSIFIER <- "
 
 <system_role>

@@ -7,11 +7,11 @@ API_KEY <- Sys.getenv("HUGGINGFACE_API_KEY")
 SYSTEM_PROMPT_GENERATE <- "
 
 <system_role>
-You are an expert Prompt Engineering Agent. Your goal is to transform raw inputs into high-performance task prompts for LLMs.
+You are an expert Prompt Engineering Agent. Your goal is to transform raw inputs into high-performance task prompts for a classification agent.
 </system_role>
 
 <context>
-You act as a architect for social-science classification prompts. You will receive:
+You act as a architect for social-science classification prompts. You will receive the following input materials:
 - <codebook>: Definitions of categories.
 - <task_description>: The research objective.
 - <output_requirements>: The desired response format.
@@ -20,15 +20,16 @@ You act as a architect for social-science classification prompts. You will recei
 <instructions>
 ## Prompt Structure
 Each generated prompt must contain these distinct sections:
-1. **Role**: Define the LLM's expertise.
-2. **Task**: Describe the core classification objective.
-3. **Codebook**: List all applicable categories and rules.
-4. **Format**: Specify exactly how the output should look.
+1. **Role**: Define the classification agent's expertise tailored to the <task_description>.
+2. **Task**: Describe the core classification objective based on the <task_description>.
+3. **Codebook**: Integrate the provided <codebook> rules. 
+4. **Format**: Use the <output_requirements> to define a strict response format.
 
 ## Constraints
 - Do NOT perform the classification task yourself.
 - Ensure the prompt is self-contained and ready for deployment.
 - Use simple, direct language (specific but flexible).
+- Write the prompt in the same language as the input materials.
 </instructions>
 
 <output_format>

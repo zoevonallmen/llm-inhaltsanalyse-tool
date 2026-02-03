@@ -38,6 +38,8 @@ ui <- fluidPage(
       
       actionButton("run_instructor_generate", "Prompt generieren"),
       
+      tags$hr(),
+      
       textAreaInput(
         "optimizer_feedback",
         "Feedback für Optimierung",
@@ -47,17 +49,33 @@ ui <- fluidPage(
       
       actionButton("run_instructor_optimize", "Prompt optimieren"),
       
+      tags$hr(),
+      
       selectInput(
         "prompt_for_classifier",
         "Prompt-Version für Klassifizierung auswählen",
         choices = character(0)
       ),
       
+      tags$hr(),
+      
       fileInput(
         "doc_files",
         "Textinputs hochladen (CSV)",
         accept = c(".csv") #sollten noch andere Formate erlaubt werden? 
       ),
+      
+      tags$hr(),
+      
+      fileInput(
+        "subsample_file",
+        "Codiertes Subsample ('Goldstandard') hochladen (CSV: doc_id, content, manual_code)",
+        accept = c(".csv"),
+      ),
+      
+      actionButton("lock_subsample", "Subsample übernehmen"),
+      
+      tags$hr(),
       
       actionButton("run_classifier", "Klassifizieren")
     ),
@@ -71,9 +89,13 @@ ui <- fluidPage(
       h4("Aktuelle Task Prompt"),
       verbatimTextOutput("current_prompt"),
       
-      h4("Klassifikation (test)"),
+      h4("Klassifikation"),
       verbatimTextOutput("classifier_output"),
-      tableOutput("classifier_table")
+      tableOutput("classifier_table"),
+      
+      h4("Subsample Anzeige"),
+      tableOutput("subsample_table")
+      
     
       
     )
@@ -199,6 +221,11 @@ server <- function(input, output, session) {
     )
   })
   
+  #Subsample
+  active_subsample <- reactiveVal(NULL)
+  
+
+  
 ## Batch Klassifikation Ergebnisse speichern------------------------------------
   
   classifier_results <- reactiveVal(NULL)
@@ -257,6 +284,14 @@ server <- function(input, output, session) {
     save_new_version(optimized_prompt)
     
   })
+  
+##UPLOAD SUBSAMPLE UND VORSCHAU ------------------------------------------------
+  observeEvent(input$lock_subsample, {
+    df <- subsample_data()
+    req(df)
+    active_subsample(df)
+  })
+
   
 ##KLASSIFIZIEREN ---------------------------------------------------------------
   
@@ -337,6 +372,15 @@ server <- function(input, output, session) {
     )
 
   })
+  
+
+##OUPTPUT SUBSAMPLE ------------------------------------------------------------
+  
+  output$active_subsample <- renderText({
+    df <- active_subsample()
+    if (is.null(df)) return("Noch kein Subsample übernommen.")
+    paste0("Aktives Subsample: ", nrow(df), " Zeilen") 
+  })
 
 ##OUTPUT CLASSIFIER RESULTAT ---------------------------------------------------
   output$classifier_output <- renderText({
@@ -356,9 +400,12 @@ server <- function(input, output, session) {
     df
   })
   
-  
-  
+
+
 }
+
+
+
 
 
 shinyApp(ui = ui, server = server) 

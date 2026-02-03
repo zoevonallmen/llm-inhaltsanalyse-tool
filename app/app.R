@@ -72,12 +72,12 @@ ui <- fluidPage(
       fileInput(
         "subsample_file",
         "Codiertes Subsample ('Goldstandard') hochladen (CSV: doc_id, content, manual_code)",
-        accept = c(".csv"),
+        accept = c(".csv")
       ),
       
       actionButton("lock_subsample", "Subsample übernehmen"),
       
-      actionButton("run_subsample_vitals", "Subsample testen (vitals"),
+      actionButton("run_subsample_vitals", "Subsample testen (vitals)"),
       
       tags$hr(),
       
@@ -102,7 +102,9 @@ ui <- fluidPage(
       
       h4("Klassifikation"),
       verbatimTextOutput("classifier_output"),
-      tableOutput("classifier_table")
+      tableOutput("classifier_table"),
+      
+      
     
       
     )
@@ -232,7 +234,36 @@ server <- function(input, output, session) {
   active_subsample <- reactiveVal(NULL)
   
   eval_vitals_df <- reactiveVal(NULL)
-  eval_vtals_metrics <- reactiveVal(NULL)
+  eval_vitals_metrics <- reactiveVal(NULL)
+  
+  #Subsample CSV:
+  subsample_data <- reactive({
+    req(input$subsample_file)
+
+    df <- tryCatch(
+      read.csv(input$subsample_file$datapath, stringsAsFactors = FALSE),
+      error = function(e) NULL
+    )
+    
+    # Spalten prüfen
+    required <- c("doc_id", "content", "manual_code")
+    missing <- setdiff(required, names(df))
+    if (length(missing) > 0) {
+      stop(paste0(
+        "Subsample-CSV fehlt Spalte(n): ",
+        paste(missing, collapse = ", "),
+        "\nGefundene Spalten: ",
+        paste(names(df), collapse = ", ")
+      ))
+    }
+    
+    df <- df[!is.na(df$content) & nzchar(trimws(df$content)), ]
+    df <- df[!is.na(df$manual_code) & nzchar(trimws(df$manual_code)), ]
+    
+    df
+  })
+  
+  
   
 
   
@@ -295,6 +326,7 @@ server <- function(input, output, session) {
     
   })
 
+
   
 ##VITALS-FUNKTIONEN: SOLVER, SCORER, METRICS -----------------------------------
   
@@ -318,7 +350,7 @@ server <- function(input, output, session) {
       
       res <- tryCatch(
         classifier(
-          article_text = article_text,
+          article_text = input[[i]],
           prompt = prompt_text,
           chat_object = chat_obj
         ),
@@ -336,10 +368,10 @@ server <- function(input, output, session) {
     })
     
     list(
-      result = vapply(results, '[[', "", "pred_code"),
-      reasoning = vapply(results, '[[', "", "reasoning"),
-      success = vapply(results, '[[', FALSE, "success"),
-      error = vapply(reults, '[[', "", "error")
+      result    = vapply(results, `[[`, "", "pred_code"),
+      reasoning = vapply(results, `[[`, "", "reasoning"),
+      success   = vapply(results, `[[`, FALSE, "success"),
+      error     = vapply(results, `[[`, "", "error")
     )
   }
   
@@ -366,16 +398,17 @@ server <- function(input, output, session) {
   
   #Button: Task bauen/ausführen (Subsample klassifizieren, vitals Analysis)
   observeEvent(input$run_subsample_vitals, {
-    req(active_subsample())
-    req(input$prompt_for_classifier)
     
     df <- active_subsample()
+    req(df)
     req(nrow(df) > 0)
     
+    req(input$prompt_for_classifier)
     versions <- prompt_versions()
     prompt_key <- input$prompt_for_classifier
     prompt_text <- versions[[prompt_key]]
     req(prompt_text)
+    
     
     #vitals Dataset, min. inkl. input und target
     dataset_vitals <- tibble::tibble(
@@ -389,12 +422,32 @@ server <- function(input, output, session) {
       solver = solver_classifier,
       scorer = scorer_exact_match,
       metrics = list(accuracy = metric_accuracy),
-      name = paste0("subsaple_", prompt_key)
+      name = paste0("subsample_", prompt_key)
     )
     
     #$eval
-    #tabelle für UI hier bauen?
+    task$eval(prompt_text = prompt_text, view = FALSE) #view optinoal, mal ausprobieren wenns sonst klappt..
     
+    samples <- task$get_samples() #enthält input, target, reult, score usw
+    metrics <- task$metrics #list mit accuracy
+    
+    #tabelle für UI hier bauen?
+    out <- data.frame(
+      doc_id = samples$doc_id,
+      manual_code = samples$target,
+      pred_code = samples$result,
+      match = samples$score == "C",
+      reasoning = samples$reasoning,
+      success = samples$success,
+      error = samples$error,
+      stringsAsFactors = FALSE
+    )
+    
+    eval_vitals_df(out)
+    eval_vitals_metrics(list(
+      prompt_version = prompt_key,
+      accuracy = metrics[["accuracy"]]
+    ))
     
   })
 
@@ -489,7 +542,33 @@ server <- function(input, output, session) {
     paste0("Aktives Subsample: ", nrow(df), " Zeilen") 
   })
   
+  output$subsample_table <- renderTable({
+    df <- active_subsample()
+    if (is.null(df)) return(NULL)
+    head(df, 50)
+  })
+  
+  
   #Anzeigen Outpuut Summary, tabelle
+  output$eval_vitals_summary <- renderText({
+    m <- eval_vitals_metrics()
+    df <- eval_vitals_df()
+    if (is.null(m) || is.null(df)) return("Noch keine Subsample Evaluation durchgeführt.")
+    
+    paste0(
+      "Prompt-Version: ", m$prompt_version, "\n",
+      "Textdoc: ", nrow(df), "\n",
+      "Accuracy: ", round(as.numeric(m$accuracy), 3), "\n",
+      "Fehlerhafte Runs: ", sum(!df$success)
+    )
+  })
+  
+  output$eval_vitals_table <- renderTable({
+    df <- eval_vitals_df()
+    if (is.null(df)) return(NULL)
+    
+    df[order(df$match, decreasing = TRUE), c("doc_id", "manual_code", "pred_code", "match", "reasoning")]
+  })
 
 ##OUTPUT CLASSIFIER RESULTAT ---------------------------------------------------
   output$classifier_output <- renderText({
@@ -518,3 +597,4 @@ server <- function(input, output, session) {
 
 
 shinyApp(ui = ui, server = server) 
+

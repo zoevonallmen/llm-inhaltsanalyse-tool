@@ -1,5 +1,7 @@
 library(shiny) 
 library(shinythemes)
+library(vitals)
+library(tibble)
 library(here)
 
 source(here::here("R", "instructor.R"))
@@ -75,6 +77,8 @@ ui <- fluidPage(
       
       actionButton("lock_subsample", "Subsample übernehmen"),
       
+      actionButton("run_subsample_vitals", "Subsample testen (vitals"),
+      
       tags$hr(),
       
       actionButton("run_classifier", "Klassifizieren")
@@ -89,13 +93,16 @@ ui <- fluidPage(
       h4("Aktuelle Task Prompt"),
       verbatimTextOutput("current_prompt"),
       
+      h4("Subsample Anzeige"),
+      tableOutput("subsample_table"),
+      
+      h4("Subsample Evaluation (vitals)"),
+      verbatimTextOutput("eval_vitals_summary"),
+      tableOutput("eval_vitals_table"),
+      
       h4("Klassifikation"),
       verbatimTextOutput("classifier_output"),
-      tableOutput("classifier_table"),
-      
-      h4("Subsample Anzeige"),
-      tableOutput("subsample_table")
-      
+      tableOutput("classifier_table")
     
       
     )
@@ -224,6 +231,9 @@ server <- function(input, output, session) {
   #Subsample
   active_subsample <- reactiveVal(NULL)
   
+  eval_vitals_df <- reactiveVal(NULL)
+  eval_vtals_metrics <- reactiveVal(NULL)
+  
 
   
 ## Batch Klassifikation Ergebnisse speichern------------------------------------
@@ -284,12 +294,108 @@ server <- function(input, output, session) {
     save_new_version(optimized_prompt)
     
   })
+
   
-##UPLOAD SUBSAMPLE UND VORSCHAU ------------------------------------------------
+##VITALS-FUNKTIONEN: SOLVER, SCORER, METRICS -----------------------------------
+  
+  #SOLVER (solver ruft classifier auf)
+  solver_classifier <- function(input, prompt_text) {
+    #input = texte (content) / prompt_text = ausgewählte Prompt-Version
+    
+    results <- lapply(seq_along(input), function(i) {
+      
+      chat_obj <- hf_model <- ellmer::chat_huggingface(
+        system_prompt = SYSTEM_PROMPT_CLASSIFIER,
+        model = LLAMA_MODEL,
+        credentials = function() API_KEY,
+        params = list(
+          temperature = 0.0,
+          max_tokens  = 300,
+          seed        = 24
+        ),
+        echo = "none"
+      )
+      
+      res <- tryCatch(
+        classifier(
+          article_text = article_text,
+          prompt = prompt_text,
+          chat_object = chat_obj
+        ),
+        error = function(e) list(
+          success = FALSE, code = NA, reasoning = NA, raw = NA, json = NA, error = e$message
+        )
+      )
+      
+      list(
+        pred_code = if (is.null(res$code)) NA_character_ else as.character(res$code),
+        reasoning = if (is.null(res$reasoning)) NA_character_ else as.character(res$reasoning),
+        success = isTRUE(res$success),
+        error = if (is.null(res$error)) NA_character_ else as.character(res$error)
+      )
+    })
+    
+    list(
+      result = vapply(results, '[[', "", "pred_code"),
+      reasoning = vapply(results, '[[', "", "reasoning"),
+      success = vapply(results, '[[', FALSE, "success"),
+      error = vapply(reults, '[[', "", "error")
+    )
+  }
+  
+  #SCORER (result gegeb target matchen)
+  scorer_exact_match <- function(result, target) {
+    #result & target = character vektore, gleiche länge
+    #scorer soll pro sample artikel 1 Label liefern ("C" = correct, "F" = false)
+    ifelse(!is.na(result) & result == target, "C", "I") 
+  }
+  
+  #METRICS: ACCURACY
+  metric_accuracy <- function(score) {
+    mean(score =="C", na.rm = TRUE)
+  }
+  
+##SUBSAMLPLE -------------------------------------------------------------------
+  
+  #Upload/Übernehmen Subsample
   observeEvent(input$lock_subsample, {
     df <- subsample_data()
     req(df)
     active_subsample(df)
+  })
+  
+  #Button: Task bauen/ausführen (Subsample klassifizieren, vitals Analysis)
+  observeEvent(input$run_subsample_vitals, {
+    req(active_subsample())
+    req(input$prompt_for_classifier)
+    
+    df <- active_subsample()
+    req(nrow(df) > 0)
+    
+    versions <- prompt_versions()
+    prompt_key <- input$prompt_for_classifier
+    prompt_text <- versions[[prompt_key]]
+    req(prompt_text)
+    
+    #vitals Dataset, min. inkl. input und target
+    dataset_vitals <- tibble::tibble(
+      input = as.character(df$content),
+      target = as.character(df$manual_code),
+      doc_id = as.character(df$doc_id) #so fürs vergleichen noch gut?
+    )
+    
+    task <- vitals::Task$new(
+      dataset = dataset_vitals,
+      solver = solver_classifier,
+      scorer = scorer_exact_match,
+      metrics = list(accuracy = metric_accuracy),
+      name = paste0("subsaple_", prompt_key)
+    )
+    
+    #$eval
+    #tabelle für UI hier bauen?
+    
+    
   })
 
   
@@ -311,7 +417,7 @@ server <- function(input, output, session) {
       
       article_text <- docs[[i]]
       
-      hf_model <- ellmer::chat_huggingface(
+      chat_obj <- hf_model <- ellmer::chat_huggingface(
         system_prompt = SYSTEM_PROMPT_CLASSIFIER,
         model = LLAMA_MODEL,
         credentials = function() API_KEY,
@@ -323,20 +429,20 @@ server <- function(input, output, session) {
         echo = "none"
       )
         
-        start_time <- Sys.time()
+        start_time <- Sys.time() #kann eigentlich jetzt raus?
         
         res <- tryCatch(
           classifier(
             article_text = article_text,
             prompt = prompt_text,
-            chat_object = hf_model
+            chat_object = chat_obj
           ),
           error = function(e) list(
             success = FALSE, code = NA, reasoning = NA, raw = NA, json = NA, error = e$message
           )
         )
         
-        end_time <- Sys.time()
+        end_time <- Sys.time() #raus? 
         
         data.frame(
           row = i,
@@ -376,11 +482,14 @@ server <- function(input, output, session) {
 
 ##OUPTPUT SUBSAMPLE ------------------------------------------------------------
   
+  #Anzeige Subsample (kann raus?)
   output$active_subsample <- renderText({
     df <- active_subsample()
     if (is.null(df)) return("Noch kein Subsample übernommen.")
     paste0("Aktives Subsample: ", nrow(df), " Zeilen") 
   })
+  
+  #Anzeigen Outpuut Summary, tabelle
 
 ##OUTPUT CLASSIFIER RESULTAT ---------------------------------------------------
   output$classifier_output <- renderText({

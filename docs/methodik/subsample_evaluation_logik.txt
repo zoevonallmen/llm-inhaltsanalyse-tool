@@ -24,6 +24,11 @@ CSV mit content, manuelle codierung (manual_code)
 - Code des classifiers = pred_code
 - wie kann ich Reasoning miteinschliessen
 
+App Script: 
+=> #result & target = character vektore, gleiche länge
+    #scorer soll pro sample artikel 1 Label liefern ("C" = correct, "F" = false)
+sprich; taregt kann auch ein Wort sein, muss einf übereinstimmen... / Zahl vermutl. einfacher
+
 3) Scorer
 - exakte Übereinstimmung? wenn das resultat vom Solver == target
 

@@ -239,13 +239,35 @@ server <- function(input, output, session) {
   #Subsample CSV:
   subsample_data <- reactive({
     req(input$subsample_file)
+    
+    path <- input$subsample_file$datapath
+    
+    header_line <- readLines(path, n = 1, encoding = "UTF-8", warn = FALSE)
+    sep_guess <- if (grepl(";", header_line) && !grepl(",", header_line)) ";" else ","
+    
 
     df <- tryCatch(
-      read.csv(input$subsample_file$datapath, stringsAsFactors = FALSE),
+      read.csv(
+        path,
+        sep = sep_guess,
+        stringsAsFactors = FALSE,
+        check.names = FALSE,
+        fileEncoding = "UTF-8"
+      ),
       error = function(e) NULL
     )
+    req(!is.null(df))
     
-    # Spalten prüfen
+    names(df) <- trimws(names(df))
+    
+    if (ncol(df) == 1) {
+      stop(paste0(
+        "CSV wurde als 1 Spalte eingelesen. Vermutlich falsches Trennzeichen/Export.\n",
+        "Erkanntes Trennzeichen sep='", sep_guess, "'. Header:\n",
+        header_line
+      ))
+    }
+    
     required <- c("doc_id", "content", "manual_code")
     missing <- setdiff(required, names(df))
     if (length(missing) > 0) {
@@ -257,13 +279,14 @@ server <- function(input, output, session) {
       ))
     }
     
+    df$content <- as.character(df$content)
+    df$manual_code <- as.character(df$manual_code)
+    
     df <- df[!is.na(df$content) & nzchar(trimws(df$content)), ]
     df <- df[!is.na(df$manual_code) & nzchar(trimws(df$manual_code)), ]
     
     df
   })
-  
-  
   
 
   

@@ -357,9 +357,9 @@ server <- function(input, output, session) {
   solver_classifier <- function(input, prompt_text) {
     #input = texte (content) / prompt_text = ausgewählte Prompt-Version
     
-    results <- lapply(seq_along(input), function(i) {
+    samples_out <- lapply(seq_along(input), function(i) {
       
-      chat_obj <- hf_model <- ellmer::chat_huggingface(
+      chat_obj <- ellmer::chat_huggingface(
         system_prompt = SYSTEM_PROMPT_CLASSIFIER,
         model = LLAMA_MODEL,
         credentials = function() API_KEY,
@@ -378,7 +378,7 @@ server <- function(input, output, session) {
           chat_object = chat_obj
         ),
         error = function(e) list(
-          success = FALSE, code = NA, reasoning = NA, raw = NA, json = NA, error = e$message
+          success = FALSE, code = NA, reasoning = NA, error = e$message
         )
       )
       
@@ -386,23 +386,33 @@ server <- function(input, output, session) {
         pred_code = if (is.null(res$code)) NA_character_ else as.character(res$code),
         reasoning = if (is.null(res$reasoning)) NA_character_ else as.character(res$reasoning),
         success = isTRUE(res$success),
-        error = if (is.null(res$error)) NA_character_ else as.character(res$error)
+        error = if (is.null(res$error)) NA_character_ else as.character(res$error),
+        solver_chat = chat_obj
       )
     })
     
     list(
-      result    = vapply(results, `[[`, "", "pred_code"),
-      reasoning = vapply(results, `[[`, "", "reasoning"),
-      success   = vapply(results, `[[`, FALSE, "success"),
-      error     = vapply(results, `[[`, "", "error")
+      result      = vapply(samples_out, `[[`, "", "pred_code"),
+      solver_chat = lapply(samples_out, `[[`, "solver_chat"), #hatte ich übersehen, warning: braucht solver chat
+      meta        = list(
+        reasoning   = vapply(samples_out, `[[`, "", "reasoning"),
+        success     = vapply(samples_out, `[[`, FALSE, "success"),
+        error       = vapply(samples_out, `[[`, "", "error")#mehr vitals format? 
+      )
+      
     )
+    
   }
   
   #SCORER (result gegeb target matchen)
-  scorer_exact_match <- function(result, target) {
-    #result & target = character vektore, gleiche länge
-    #scorer soll pro sample artikel 1 Label liefern ("C" = correct, "F" = false)
-    ifelse(!is.na(result) & result == target, "C", "I") 
+  scorer_exact_match <- function(sample) {
+    result <- sample$result
+    target <- sample$target
+    
+    s <- ifelse(!is.na(result) & result == target, "C", "I")
+    list(score = s, #weil: scorer must return a list with at least sclot score
+         pred = result,
+         gold = target) 
   }
   
   #METRICS: ACCURACY
@@ -454,15 +464,35 @@ server <- function(input, output, session) {
     samples <- task$get_samples() #enthält input, target, reult, score usw
     metrics <- task$metrics #list mit accuracy
     
-    #tabelle für UI hier bauen?
+    #meta daten
+    get_meta_col <- function(samples, colname) {
+      
+      if (colname %in% names(samples)) return(samples[[colname]])
+      
+      if ("meta" %in% names(samples)) {
+        return(vapply(samples$meta, function(m) {
+          if (is.null(m) || is.null(m[[colname]])) NA else m[[colname]]
+        }, FUN.VALUE = NA_character_))
+      }
+      
+      rep(NA_character_, nrow(samples))
+    }
+    
+    reasoning_vec <- get_meta_col(samples, "reasoning")
+    success_vec   <- get_meta_col(samples, "success")
+    error_vec     <- get_meta_col(samples, "error")
+    success_logical <- suppressWarnings(as.logical(success_vec))
+    
+    
+    #Tabelle UI
     out <- data.frame(
-      doc_id = samples$doc_id,
-      manual_code = samples$target,
-      pred_code = samples$result,
-      match = samples$score == "C",
-      reasoning = samples$reasoning,
-      success = samples$success,
-      error = samples$error,
+      doc_id      = as.character(samples$doc_id),
+      manual_code = as.character(samples$target),
+      pred_code   = as.character(samples$result),
+      match       = samples$score == "C",
+      reasoning   = as.character(reasoning_vec),
+      success     = success_logical,
+      error       = as.character(error_vec),
       stringsAsFactors = FALSE
     )
     
@@ -572,25 +602,13 @@ server <- function(input, output, session) {
   })
   
   
-  #Anzeigen Outpuut Summary, tabelle
-  output$eval_vitals_summary <- renderText({
-    m <- eval_vitals_metrics()
-    df <- eval_vitals_df()
-    if (is.null(m) || is.null(df)) return("Noch keine Subsample Evaluation durchgeführt.")
-    
-    paste0(
-      "Prompt-Version: ", m$prompt_version, "\n",
-      "Textdoc: ", nrow(df), "\n",
-      "Accuracy: ", round(as.numeric(m$accuracy), 3), "\n",
-      "Fehlerhafte Runs: ", sum(!df$success)
-    )
-  })
-  
+  #Anzeigen Output Tabelle
   output$eval_vitals_table <- renderTable({
     df <- eval_vitals_df()
     if (is.null(df)) return(NULL)
     
-    df[order(df$match, decreasing = TRUE), c("doc_id", "manual_code", "pred_code", "match", "reasoning")]
+    df <- df[order(df$match, decreasing = TRUE), ]
+    df[, c("doc_id", "manual_code", "pred_code", "match", "success", "error", "reasoning")]
   })
 
 ##OUTPUT CLASSIFIER RESULTAT ---------------------------------------------------

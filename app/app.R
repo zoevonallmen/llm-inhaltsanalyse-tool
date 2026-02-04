@@ -491,8 +491,6 @@ server <- function(input, output, session) {
       pred_code   = as.character(samples$result),
       match       = samples$score == "C",
       reasoning   = as.character(reasoning_vec),
-      success     = success_logical,
-      error       = as.character(error_vec),
       stringsAsFactors = FALSE
     )
     
@@ -608,7 +606,7 @@ server <- function(input, output, session) {
     if (is.null(df)) return(NULL)
     
     df <- df[order(df$match, decreasing = TRUE), ]
-    df[, c("doc_id", "manual_code", "pred_code", "match", "success", "error", "reasoning")]
+    df[, c("doc_id", "manual_code", "pred_code", "match", "reasoning")]
   })
 
 ##OUTPUT CLASSIFIER RESULTAT ---------------------------------------------------

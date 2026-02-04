@@ -48,3 +48,12 @@ domain, task, and knowledge are pieces of metadata describing the kind of R codi
 source: Where the problem came from, as a URL. Many of these coding problems are adapted “from the wild” and include the kinds of context usually available to those answering questions.
 "
 => reasoning wie "domanin, knowledge" als meta data?.....
+
+
+
+----
+
+
+Problem: reasoning in meta; funktioniert nicht (Ausgabe: NA)
+->reasoning einfach aus classifier() zurückgeben; ohne meta (ist ja nur zum schauen)
+->vitals nur result + score; reasoning parallel in reactiveval speichern

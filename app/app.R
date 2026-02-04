@@ -1,7 +1,7 @@
 library(shiny) 
 library(shinythemes)
-library(vitals)
-library(tibble)
+# library(vitals)
+# library(tibble)
 library(here)
 
 source(here::here("R", "instructor.R"))
@@ -105,7 +105,7 @@ ui <- fluidPage(
       tableOutput("classifier_table"),
       
       
-    
+      
       
     )
   )
@@ -115,7 +115,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
-##INPUTS (Codebuch, Task Description, Output Requirements, Textinputs) ---------
+  ##INPUTS (Codebuch, Task Description, Output Requirements, Textinputs) ---------
   
   #Reactive Values für Prompt-Komponenten
   prompt_components <- reactiveVal(NULL)
@@ -154,7 +154,7 @@ server <- function(input, output, session) {
   })
   
   
-##PROMPTS IN XML TAGS (für Instructor Generate) --------------------------------
+  ##PROMPTS IN XML TAGS (für Instructor Generate) --------------------------------
   
   #Generierung XML-Promptinputs für Instructor
   generate_instructor_prompt <- function(comps) {
@@ -164,9 +164,9 @@ server <- function(input, output, session) {
       "<output_requirements>\n", comps$output_requirements, "\n</output_requirements>"
     )
   }
-
-
-##VERSIONIERUNG DER PROMPTS ----------------------------------------------------
+  
+  
+  ##VERSIONIERUNG DER PROMPTS ----------------------------------------------------
   
   prompt_versions <- reactiveVal(list())
   prompt_version_n <- reactiveVal(0)
@@ -245,7 +245,7 @@ server <- function(input, output, session) {
     header_line <- readLines(path, n = 1, encoding = "UTF-8", warn = FALSE)
     sep_guess <- if (grepl(";", header_line) && !grepl(",", header_line)) ";" else ","
     
-
+    
     df <- tryCatch(
       read.csv(
         path,
@@ -288,13 +288,13 @@ server <- function(input, output, session) {
     df
   })
   
-
   
-## Batch Klassifikation Ergebnisse speichern------------------------------------
+  
+  ## Batch Klassifikation Ergebnisse speichern------------------------------------
   
   classifier_results <- reactiveVal(NULL)
   
-##PROMPTS IN XML (für Instructor Optimize)--------------------------------------
+  ##PROMPTS IN XML (für Instructor Optimize)--------------------------------------
   
   build_optimizer_input_xml <- function(current_prompt, comps, feedback) {
     source_materials_xml <- paste0(
@@ -310,7 +310,7 @@ server <- function(input, output, session) {
     )
   }
   
-##PROMPT GENERIERUNG (Instructor; Modus Generate) ------------------------------
+  ##PROMPT GENERIERUNG (Instructor; Modus Generate) ------------------------------
   
   #Button: Prompt generieren (XML an instructor)
   observeEvent(input$run_instructor_generate, {
@@ -327,8 +327,8 @@ server <- function(input, output, session) {
     save_new_version(instructor_generated_prompt)
     
   })
-
-##PROMPT OPTIMIERUNG (Instructor; Modus Optimize) ------------------------------
+  
+  ##PROMPT OPTIMIERUNG (Instructor; Modus Optimize) ------------------------------
   
   observeEvent(input$run_instructor_optimize, {
     comps <- prompt_components()
@@ -348,79 +348,80 @@ server <- function(input, output, session) {
     save_new_version(optimized_prompt)
     
   })
-
-
   
-##VITALS-FUNKTIONEN: SOLVER, SCORER, METRICS -----------------------------------
   
-  #SOLVER (solver ruft classifier auf)
-  solver_classifier <- function(input, prompt_text) {
-    #input = texte (content) / prompt_text = ausgewählte Prompt-Version
-    
-    samples_out <- lapply(seq_along(input), function(i) {
-      
-      chat_obj <- ellmer::chat_huggingface(
-        system_prompt = SYSTEM_PROMPT_CLASSIFIER,
-        model = LLAMA_MODEL,
-        credentials = function() API_KEY,
-        params = list(
-          temperature = 0.0,
-          max_tokens  = 300,
-          seed        = 24
-        ),
-        echo = "none"
-      )
-      
-      res <- tryCatch(
-        classifier(
-          article_text = input[[i]],
-          prompt = prompt_text,
-          chat_object = chat_obj
-        ),
-        error = function(e) list(
-          success = FALSE, code = NA, reasoning = NA, error = e$message
-        )
-      )
-      
-      list(
-        pred_code = if (is.null(res$code)) NA_character_ else as.character(res$code),
-        reasoning = if (is.null(res$reasoning)) NA_character_ else as.character(res$reasoning),
-        success = isTRUE(res$success),
-        error = if (is.null(res$error)) NA_character_ else as.character(res$error),
-        solver_chat = chat_obj
-      )
-    })
-    
-    list(
-      result      = vapply(samples_out, `[[`, "", "pred_code"),
-      solver_chat = lapply(samples_out, `[[`, "solver_chat"), #hatte ich übersehen, warning: braucht solver chat
-      meta        = list(
-        reasoning   = vapply(samples_out, `[[`, "", "reasoning"),
-        success     = vapply(samples_out, `[[`, FALSE, "success"),
-        error       = vapply(samples_out, `[[`, "", "error")#mehr vitals format? 
-      )
-      
-    )
-    
-  }
   
-  #SCORER (result gegeb target matchen)
-  scorer_exact_match <- function(sample) {
-    result <- sample$result
-    target <- sample$target
-    
-    s <- ifelse(!is.na(result) & result == target, "C", "I")
-    list(score = s, #weil: scorer must return a list with at least sclot score
-         pred = result,
-         gold = target) 
-  }
+  ##VITALS-FUNKTIONEN: SOLVER, SCORER, METRICS -----------------------------------
   
-  #METRICS: ACCURACY
-  metric_accuracy <- function(score) {
-    mean(score =="C", na.rm = TRUE)
-  }
+  # #Helper für Reasoning aus Subsample
+  # extract_reasoning_from_chat <- function(chat_obj) {
+  #   txt <- tryCatch(as.character(chat_obj), error = function(e) NULL)
+  #   if (is.null(txt) || !nzchar(txt)) return(NA_character_)
+  #   
+  #   json_candidate <- extract_json(txt)
+  #   if (is.null(json_candidate)) json_candidate <- txt
+  #   
+  #   parsed <- tryCatch(jsonlite::fromJSON(json_candidate), error = function(e) NULL)
+  #   if (is.null(parsed) || is.null(parsed$reasoning)) return(NA_character_)
+  #   
+  #   as.character(parsed$reasoning)
+  # }
+  # 
   
-##SUBSAMLPLE -------------------------------------------------------------------
+  # #SOLVER (solver ruft classifier auf)
+  # solver_classifier_subsample <- function(input, prompt_text) {
+  #   #input = texte (content) / prompt_text = ausgewählte Prompt-Version
+  #   
+  #   per_sample <- lapply(seq_along(input), function(i) {
+  #     
+  #     chat_obj <- ellmer::chat_huggingface(
+  #       system_prompt = SYSTEM_PROMPT_CLASSIFIER,
+  #       model = LLAMA_MODEL,
+  #       credentials = function() API_KEY,
+  #       params = list(
+  #         temperature = 0.0,
+  #         max_tokens  = 300,
+  #         seed        = 24
+  #       ),
+  #       echo = "none"
+  #     )
+  #     
+  #     res <- classifier(
+  #       article_text = input[[i]],
+  #       prompt = prompt_text,
+  #       chat_object = chat_obj
+  #     )
+  #     
+  #     list(
+  #       code = if (is.null(res$code)) NA_character_ else as.character(res$code),
+  #       chat = chat_obj
+  #     )
+  #   })
+  #   
+  #   list(
+  #     result      = vapply(per_sample, `[[`, "", "code"),
+  #     solver_chat = lapply(per_sample, `[[`, "chat")
+  #   )
+  # }
+  
+  # #SCORER (result gegeb target matchen)
+  # scorer_exact_match <- function(sample) {
+  #   result <- sample$result
+  #   target <- sample$target
+  #   
+  #   s <- ifelse(!is.na(result) & result == target, "C", "I")
+  #   list(score = s, #weil: scorer must return a list with at least sclot score
+  #        pred = result,
+  #        gold = target) 
+  # }
+  # 
+  # #METRICS: ACCURACY
+  # metric_accuracy <- function(score) {
+  #   mean(score =="C", na.rm = TRUE)
+  # }
+  
+  
+  ##SUBSAMLPLE -------------------------------------------------------------------
   
   #Upload/Übernehmen Subsample
   observeEvent(input$lock_subsample, {
@@ -442,68 +443,72 @@ server <- function(input, output, session) {
     prompt_text <- versions[[prompt_key]]
     req(prompt_text)
     
+    n <- nrow(df)
     
-    #vitals Dataset, min. inkl. input und target
-    dataset_vitals <- tibble::tibble(
-      input = as.character(df$content),
-      target = as.character(df$manual_code),
-      doc_id = as.character(df$doc_id) #so fürs vergleichen noch gut?
-    )
-    
-    task <- vitals::Task$new(
-      dataset = dataset_vitals,
-      solver = solver_classifier,
-      scorer = scorer_exact_match,
-      metrics = list(accuracy = metric_accuracy),
-      name = paste0("subsample_", prompt_key)
-    )
-    
-    #$eval
-    task$eval(prompt_text = prompt_text, view = FALSE) #view optinoal, mal ausprobieren wenns sonst klappt..
-    
-    samples <- task$get_samples() #enthält input, target, reult, score usw
-    metrics <- task$metrics #list mit accuracy
-    
-    #meta daten
-    get_meta_col <- function(samples, colname) {
-      
-      if (colname %in% names(samples)) return(samples[[colname]])
-      
-      if ("meta" %in% names(samples)) {
-        return(vapply(samples$meta, function(m) {
-          if (is.null(m) || is.null(m[[colname]])) NA else m[[colname]]
-        }, FUN.VALUE = NA_character_))
-      }
-      
-      rep(NA_character_, nrow(samples))
+    norm_code <- function(x) {
+      x <- as.character(x)
+      x <- trimws(x)
+      x[x == ""] <- NA_character_
+      x
     }
     
-    reasoning_vec <- get_meta_col(samples, "reasoning")
-    success_vec   <- get_meta_col(samples, "success")
-    error_vec     <- get_meta_col(samples, "error")
-    success_logical <- suppressWarnings(as.logical(success_vec))
+    withProgress(message = "Subsample wird klassifiziert ...", value = 0, {
+      
+      out_list <- lapply(seq_len(n), function(i) {
+        incProgress(1 / n, detail = paste("Dokument", i, "von", n))
+        
+        chat_obj <- ellmer::chat_huggingface(
+          system_prompt = SYSTEM_PROMPT_CLASSIFIER,
+          model = LLAMA_MODEL,
+          credentials = function() API_KEY,
+          params = list(
+            temperature = 0.0,
+            max_tokens  = 300,
+            seed        = 24
+          ),
+          echo = "none"
+        )
+        
+        res <- tryCatch(
+          classifier(
+            article_text = df$content[i],
+            prompt = prompt_text,
+            chat_object = chat_obj
+          ),
+          error = function(e) list(success = FALSE, code = NA, reasoning = NA, error = e$message)
+        )
+        
+        pred <- norm_code(res$code)
+        gold <- norm_code(df$manual_code[i])
+        
+        data.frame(
+          doc_id      = as.character(df$doc_id[i]),
+          manual_code = gold,
+          pred_code   = pred,
+          match       = !is.na(pred) && !is.na(gold) && pred == gold,
+          reasoning   = if (is.null(res$reasoning)) NA_character_ else as.character(res$reasoning),
+          stringsAsFactors = FALSE
+        )
+      })
+      
+    })
     
+    out <- do.call(rbind, out_list)
     
-    #Tabelle UI
-    out <- data.frame(
-      doc_id      = as.character(samples$doc_id),
-      manual_code = as.character(samples$target),
-      pred_code   = as.character(samples$result),
-      match       = samples$score == "C",
-      reasoning   = as.character(reasoning_vec),
-      stringsAsFactors = FALSE
-    )
+    # Accuracy selbst berechnen (nur gültige Vergleiche zählen)
+    acc <- mean(out$match, na.rm = TRUE)
     
     eval_vitals_df(out)
     eval_vitals_metrics(list(
       prompt_version = prompt_key,
-      accuracy = metrics[["accuracy"]]
+      accuracy = acc
     ))
-    
   })
-
   
-##KLASSIFIZIEREN ---------------------------------------------------------------
+  
+  
+  
+  ##KLASSIFIZIEREN ---------------------------------------------------------------
   
   observeEvent(input$run_classifier, {
     req(input$prompt_for_classifier)
@@ -518,20 +523,20 @@ server <- function(input, output, session) {
     withProgress(message = "Batch-Klassifikation läuft...", value = 0, {
       results <- lapply(seq_along(docs), function(i) {
         incProgress(1/length(docs), detail = paste("Dokument", i))
-      
-      article_text <- docs[[i]]
-      
-      chat_obj <- hf_model <- ellmer::chat_huggingface(
-        system_prompt = SYSTEM_PROMPT_CLASSIFIER,
-        model = LLAMA_MODEL,
-        credentials = function() API_KEY,
-        params = list(
-          temperature = 0.0,
-          max_tokens  = 300,
-          seed        = 24
-        ),
-        echo = "none"
-      )
+        
+        article_text <- docs[[i]]
+        
+        chat_obj <- hf_model <- ellmer::chat_huggingface(
+          system_prompt = SYSTEM_PROMPT_CLASSIFIER,
+          model = LLAMA_MODEL,
+          credentials = function() API_KEY,
+          params = list(
+            temperature = 0.0,
+            max_tokens  = 300,
+            seed        = 24
+          ),
+          echo = "none"
+        )
         
         start_time <- Sys.time() #kann eigentlich jetzt raus?
         
@@ -564,9 +569,9 @@ server <- function(input, output, session) {
     
     classifier_results(do.call(rbind, results))
     
-    })
+  })
   
-##AUSGABE GENERIERTER/OPTIMIERTER PROMPT (neuste Version) ----------------------
+  ##AUSGABE GENERIERTER/OPTIMIERTER PROMPT (neuste Version) ----------------------
   output$current_prompt <- renderText({
     n <- prompt_version_n()
     key <- current_prompt_key()
@@ -580,11 +585,11 @@ server <- function(input, output, session) {
       "-------------------------\n",
       prompt_text
     )
-
+    
   })
   
-
-##OUPTPUT SUBSAMPLE ------------------------------------------------------------
+  
+  ##OUPTPUT SUBSAMPLE ------------------------------------------------------------
   
   #Anzeige Subsample (kann raus?)
   output$active_subsample <- renderText({
@@ -600,7 +605,20 @@ server <- function(input, output, session) {
   })
   
   
-  #Anzeigen Output Tabelle
+  #Anzeigen Output Tabelle/Summary
+  output$eval_vitals_summary <- renderText({
+    m <- eval_vitals_metrics()
+    df <- eval_vitals_df()
+    if (is.null(m) || is.null(df)) return("Noch keine Subsample Evaluation durchgeführt.")
+    
+    paste0(
+      "Prompt-Version: ", m$prompt_version, "\n",
+      "Textdocs: ", nrow(df), "\n",
+      "Accuracy: ", round(as.numeric(m$accuracy), 3), "\n",
+      "Fehlerhafte Codierungen: ", sum(df$match == FALSE, na.rm = TRUE)
+    )
+  })
+  
   output$eval_vitals_table <- renderTable({
     df <- eval_vitals_df()
     if (is.null(df)) return(NULL)
@@ -608,8 +626,8 @@ server <- function(input, output, session) {
     df <- df[order(df$match, decreasing = TRUE), ]
     df[, c("doc_id", "manual_code", "pred_code", "match", "reasoning")]
   })
-
-##OUTPUT CLASSIFIER RESULTAT ---------------------------------------------------
+  
+  ##OUTPUT CLASSIFIER RESULTAT ---------------------------------------------------
   output$classifier_output <- renderText({
     df <- classifier_results()
     if (is.null(df)) return("Noch keine Klassifikation durchgeführt.")
@@ -627,8 +645,8 @@ server <- function(input, output, session) {
     df
   })
   
-
-
+  
+  
 }
 
 

@@ -77,10 +77,6 @@ ui <- fluidPage(
       ),
       checkboxInput("show_only_mismatches", "Nur Fehlcodierungen anzeigen", value = FALSE),
       
-      actionButton("lock_subsample", "Subsample übernehmen"),
-      
-      actionButton("run_subsample_vitals", "Subsample testen (vitals)"),
-      
       tags$hr(),
       
       # BATCH ------------------------------------------------------------------
@@ -90,6 +86,10 @@ ui <- fluidPage(
         "Textinputs hochladen (CSV)",
         accept = c(".csv") #sollten noch andere Formate erlaubt werden? 
       ),
+      
+      numericInput("subsample_n", "Zufalls-Subsample (N)", value = 50, min = 1, step = 1),
+      actionButton("draw_subsample", "Subsample ziehen (aus Datensatz)"),
+      downloadButton("download_subsample_template", "Subsample exportieren (CSV Template)"),
       
       actionButton("run_classifier", "Klassifizieren")
     ),
@@ -110,9 +110,15 @@ ui <- fluidPage(
       verbatimTextOutput("eval_vitals_summary"),
       tableOutput("eval_vitals_table"),
       
+      h4("Confusion Matrix"),
+      tableOutput("eval_confusion_table"),
+      
+      h4("Metriken pro Code"),
+      tableOutput("eval_metrics_table"),
+      
       h4("Klassifikation"),
       verbatimTextOutput("classifier_output"),
-      tableOutput("classifier_table"),
+      tableOutput("classifier_table")
     )
   )
 )
@@ -138,6 +144,8 @@ server <- function(input, output, session) {
   active_subsample <- reactiveVal(NULL)
   eval_vitals_df <- reactiveVal(NULL)
   eval_vitals_metrics <- reactiveVal(NULL)
+  
+  drawn_subsample <- reactiveVal(NULL)
   
   #Classifier Results
   classifier_results <- reactiveVal(NULL)
@@ -335,6 +343,28 @@ server <- function(input, output, session) {
       selected = current_prompt_key()
     )
   })
+  
+  #Randomsample ziehen
+  observeEvent(input$draw_subsample, {
+    docs <- docs_list()
+    req(length(docs) > 0)
+    req(input$subsample_n)
+    
+    n_total <- length(docs)
+    n_take <- min(as.integer(input$subsample_n), n_total)
+    
+    set.seed(24)  # optional: reproduzierbar; kannst du auch rausnehmen
+    idx <- sample(seq_len(n_total), size = n_take, replace = FALSE)
+    
+    df <- data.frame(
+      doc_id = paste0("row_", idx),
+      content = unlist(docs[idx], use.names = FALSE),
+      stringsAsFactors = FALSE
+    )
+    
+    drawn_subsample(df)
+  })
+  
   
   #Übernehmen Subsample
   observeEvent(input$lock_subsample, {
@@ -572,6 +602,19 @@ server <- function(input, output, session) {
     if (is.null(df)) return(NULL)
     df
   })
+  
+  #Random Sample download
+  output$download_subsample_template <- downloadHandler(
+    filename = function() paste0("subsample_template_", Sys.Date(), ".csv"),
+    content = function(file) {
+      df <- drawn_subsample()
+      req(df)
+      
+      out <- df
+      out$manual_code <- "" #->downloaden & manuell codieren
+      write.csv(out, file, row.names = FALSE, fileEncoding = "UTF-8")
+    }
+  )
   
 }
 

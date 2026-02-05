@@ -80,8 +80,6 @@ ui <- fluidPage(
       selectInput("subsample_content_col", "Textspalte", choices = character(0)),
       selectInput("subsample_manual_col", "Manuelle Codierung/Goldstandard", choices = character(0)),
       
-      checkboxInput("show_only_mismatches", "Nur Fehlcodierungen anzeigen", value = FALSE),
-      
       actionButton("lock_subsample", "Subsample übernehmen"),
       actionButton("run_subsample_vitals", "Subsample testen (vitals)"),
       
@@ -114,11 +112,13 @@ ui <- fluidPage(
       h4("Prompts anzeigen"),
       selectInput("prompt_to_view", "Prompt-Version anzeigen", choices = character(0)),
       verbatimTextOutput("prompt_view"),
+    
+      h4("Subsample anzeigen"),
+      selectInput("subsample_run_to_view", "Subsample-Run anzeigen", choices = character(0)),
       
-      h4("Subsample Anzeige"),
+      h4("Subsample Evaluation"),
+      checkboxInput("show_only_mismatches", "Nur Fehlcodierungen anzeigen", value = FALSE),
       tableOutput("subsample_table"),
-      
-      h4("Subsample Evaluation (vitals)"),
       verbatimTextOutput("eval_vitals_summary"),
       tableOutput("eval_vitals_table"),
       
@@ -148,8 +148,10 @@ server <- function(input, output, session) {
   
   #Subsample
   active_subsample <- reactiveVal(NULL)
-  eval_vitals_df <- reactiveVal(NULL)
-  eval_vitals_metrics <- reactiveVal(NULL)
+  
+  subsample_runs <- reactiveVal(list())
+  subsample_run_n <- reactiveVal(0)
+  current_subsample_run_key <- reactiveVal(NULL)
   
   #Random Sample ziehen
   drawn_subsample <- reactiveVal(NULL)
@@ -208,6 +210,23 @@ server <- function(input, output, session) {
     )
   }
   
+  #Speicherung Subsample-Runs
+  save_new_subsample_run <- function(out_df, prompt_key, acc) {
+    n <- subsample_run_n() + 1
+    key <- sprintf("run%02d", n)
+    
+    runs <- subsample_runs()
+    runs[[key]] <- list(
+      df = out_df,
+      prompt_version = prompt_key,
+      accuracy = acc
+    )
+    
+    subsample_runs(runs)
+    subsample_run_n(n)
+    current_subsample_run_key(key)
+  }
+  
   # REACTIVES (LOAD) -----------------------------------------------------------
   
   #Upload Codebook
@@ -231,7 +250,7 @@ server <- function(input, output, session) {
     
     df <- batch_df()
     req(input$batch_content_col)
-    req(input$batch_content_col)
+    req(input$batch_id_col)
     
     content_col <- input$batch_content_col
     id_col <- input$batch_id_col
@@ -300,28 +319,13 @@ server <- function(input, output, session) {
     content_col <- input$subsample_content_col
     manual_col <- input$subsample_manual_col
     
+    if (!id_col %in% names(df)) stop("Gewählte ID-Spalte existiert nicht im Subsample.")
+    if (!content_col %in% names(df)) stop("Gewählte Textspalte existiert nicht im Subsample.")
+    if (!manual_col %in% names(df)) stop("Gewählte Spalte 'manuelle Codierung' existiert nicht im Subsample.")
+    
     df$doc_id <- as.character(df[[id_col]])
     df$content <- as.character(df[[content_col]])
     df$manual_code <- as.character(df[[manual_col]])
-    
-    if (ncol(df) == 1) {
-      stop(paste0(
-        "CSV wurde als 1 Spalte eingelesen. Vermutlich falsches Trennzeichen/Export.\n",
-        "Erkanntes Trennzeichen sep='", sep_guess, "'. Header:\n",
-        header_line
-      ))
-    }
-    
-    required <- c("doc_id", "content", "manual_code")
-    missing <- setdiff(required, names(df))
-    if (length(missing) > 0) {
-      stop(paste0(
-        "Subsample-CSV fehlt Spalte(n): ",
-        paste(missing, collapse = ", "),
-        "\nGefundene Spalten: ",
-        paste(names(df), collapse = ", ")
-      ))
-    }
     
     df <- df[!is.na(df$content) & nzchar(trimws(df$content)), ]
     df <- df[!is.na(df$manual_code) & nzchar(trimws(df$manual_code)), ]
@@ -442,6 +446,18 @@ server <- function(input, output, session) {
     active_subsample(df)
   })
   
+  observe({
+    runs <- subsample_runs()
+    keys <- names(runs)
+    
+    updateSelectInput(
+      session,
+      "subsample_run_to_view",
+      choices = keys,
+      selected = current_subsample_run_key()
+    )
+  })
+  
   #Subsample klassifizieren, Accuracy rechnen, Reasoning ausgeben
   observeEvent(input$run_subsample_vitals, {
     
@@ -509,11 +525,8 @@ server <- function(input, output, session) {
     
     acc <- mean(out$match, na.rm = TRUE)# Accuracy selbst berechnen (nur gültige Vergleiche zählen)
     
-    eval_vitals_df(out)
-    eval_vitals_metrics(list(
-      prompt_version = prompt_key,
-      accuracy = acc
-    ))
+    save_new_subsample_run(out, prompt_key, acc)
+    
   })
   
   #Dropdowns mit Spaltennamen befüllen Batch 
@@ -640,27 +653,42 @@ server <- function(input, output, session) {
   
   #Anzeigen Output Summary für Subsample
   output$eval_vitals_summary <- renderText({
-    m <- eval_vitals_metrics()
-    df <- eval_vitals_df()
-    if (is.null(m) || is.null(df)) return("Noch keine Subsample Evaluation durchgeführt.")
+    runs <- subsample_runs()
+    if (length(runs) == 0) return("Noch keine Subsample Evaluation durchgeführt.")
+    
+    key <- input$subsample_run_to_view
+    if (is.null(key) || !nzchar(key)) key <- current_subsample_run_key()
+    req(key)
+    
+    run <- runs[[key]]
+    df <- run$df
+    req(!is.null(df))
     
     paste0(
-      "Prompt-Version: ", m$prompt_version, "\n",
+      "Run: ", key, "\n",
+      "Prompt-Version: ", run$prompt_version, "\n",
       "Textdocs: ", nrow(df), "\n",
-      "Accuracy: ", round(as.numeric(m$accuracy), 3), "\n",
+      "Accuracy: ", round(as.numeric(run$accuracy), 3), "\n",
       "Fehlerhafte Codierungen: ", sum(df$match == FALSE, na.rm = TRUE)
     )
   })
   
   #Anzeigen Output Tabelle für Subsample
   output$eval_vitals_table <- renderTable({
-    df <- eval_vitals_df()
-    if (is.null(df)) return(NULL)
+    runs <- subsample_runs()
+    if (length(runs) == 0) return(NULL)
+    
+    key <- input$subsample_run_to_view
+    if (is.null(key) || !nzchar(key)) key <- current_subsample_run_key()
+    req(key)
+    
+    df <- runs[[key]]$df
+    req(!is.null(df))
     
     if (isTRUE(input$show_only_mismatches)) {
       df <- df[df$match == FALSE, ]
     }
-  
+    
     subs <- active_subsample()
     if (!is.null(subs)) {
       df <- merge(df, subs[, c("doc_id", "content")], by = "doc_id", all.x = TRUE)
@@ -694,7 +722,7 @@ server <- function(input, output, session) {
     df
   })
   
-  #Export Subsample
+  #Export Randomsample
   output$download_subsample_template <- downloadHandler(
     filename = function() {
       paste0("subsample_template_", ".csv")

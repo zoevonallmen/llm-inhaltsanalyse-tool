@@ -111,7 +111,8 @@ ui <- fluidPage(
       h4("Prompt-Komponenten übernommen"),
       verbatimTextOutput("active_inputs"),
       
-      #Run Instructor Generate-Modus
+      selectInput("prompt_to_view", "Prompt-Version anzeigen", choices = character(0)),
+      verbatimTextOutput("prompt_view"),
       h4("Aktuelle Task Prompt"),
       verbatimTextOutput("current_prompt"),
       
@@ -392,6 +393,19 @@ server <- function(input, output, session) {
     )
   })
   
+  #Dropdown für prompt_view
+  observe({
+    versions <- prompt_versions()
+    keys <- names(versions)
+    
+    updateSelectInput(
+      session,
+      "prompt_to_view",
+      choices = keys,
+      selected = current_prompt_key()
+    )
+  })
+  
   #Random Sample ziehen
   observeEvent(input$draw_subsample, {
     
@@ -616,6 +630,23 @@ server <- function(input, output, session) {
       prompt_text
     )
     
+  })
+  
+  #Prompt anzeigen für gewälte Version
+  output$prompt_view <- renderText({
+    versions <- prompt_versions()
+    req(length(versions) > 0)
+    
+    key <- input$prompt_to_view
+    req(key)
+    prompt_text <- versions[[key]]
+    req(prompt_text)
+    
+    paste0(
+      "Prompt Version: ", key, "\n",
+      "-------------------------\n",
+      prompt_text
+    )
   })
   
   #Anzeige uploaded Subsample (kann raus?)

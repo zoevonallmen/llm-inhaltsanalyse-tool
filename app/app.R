@@ -99,6 +99,10 @@ ui <- fluidPage(
       selectInput("batch_id_col", "ID-Spalte", choices = character(0)),
       tags$hr(),
       
+      numericInput("subsample_n", "Zufalls-Subsample (N)", value = 50, min = 1, step = 1),
+      actionButton("draw_subsample", "Subsample ziehen"),
+      downloadButton("download_subsample_template", "Subsample exportieren (CSV Template)"),
+      
       actionButton("run_classifier", "Klassifizieren")
     ),
     
@@ -146,6 +150,9 @@ server <- function(input, output, session) {
   active_subsample <- reactiveVal(NULL)
   eval_vitals_df <- reactiveVal(NULL)
   eval_vitals_metrics <- reactiveVal(NULL)
+  
+  #Random Sample ziehen
+  drawn_subsample <- reactiveVal(NULL)
   
   #Classifier Results
   classifier_results <- reactiveVal(NULL)
@@ -385,12 +392,27 @@ server <- function(input, output, session) {
     )
   })
   
+  #Random Sample ziehen
+  observeEvent(input$draw_subsample, {
+    
+    df <- docs_list()
+    req(nrow(df) > 0)
+    req(input$subsample_n)
+    
+    n_total <- nrow(df)
+    n_take <- min(as.integer(input$subsample_n), n_total)
+    
+    set.seed(24) 
+    idx <- sample(seq_len(n_total), size = n_take, replace = FALSE)
+    
+    drawn_subsample(df[idx, c("doc_id", "content")])
+  })
+  
   #Dropdowns mit Spaltennamen befüllen Subsample
   observeEvent(subsample_df(), {
     df <- subsample_df()
     cols <- names(df)
     
-    # Defaults: wenn Standardnamen existieren, vorselektieren
     default_id <- if ("doc_id" %in% cols) "doc_id" else cols[1]
     default_content <- if ("content" %in% cols) "content" else cols[1]
     default_manual <- if ("manual_code" %in% cols) "manual_code" else cols[1]
@@ -658,6 +680,23 @@ server <- function(input, output, session) {
     if (is.null(df)) return(NULL)
     df
   })
+  
+  #Export Subsample
+  output$download_subsample_template <- downloadHandler(
+    filename = function() {
+      paste0("subsample_template_", ".csv")
+    },
+    content = function(file) {
+      df <- drawn_subsample()
+      req(df)
+      
+      out <- df
+      out$manual_code <- ""  #für manuelle codierung
+      
+      write.csv(out, file, row.names = FALSE, fileEncoding = "UTF-8")
+    }
+  )
+  
   
 }
 

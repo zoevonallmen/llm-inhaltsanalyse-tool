@@ -113,18 +113,18 @@ ui <- fluidPage(
       selectInput("prompt_to_view", "Prompt-Version anzeigen", choices = character(0)),
       verbatimTextOutput("prompt_view"),
     
-      h4("Subsample anzeigen"),
-      selectInput("subsample_run_to_view", "Subsample-Run anzeigen", choices = character(0)),
-      
-      h4("Subsample Evaluation"),
-      checkboxInput("show_only_mismatches", "Nur Fehlcodierungen anzeigen", value = FALSE),
+      h4("Subsample übernommen"),
       tableOutput("subsample_table"),
+
+      h4("Subsample Evaluation"),
+      selectInput("subsample_run_to_view", "Subsample-Run anzeigen", choices = character(0)),
+      checkboxInput("show_only_mismatches", "Nur Fehlcodierungen anzeigen", value = FALSE),
       verbatimTextOutput("eval_vitals_summary"),
       tableOutput("eval_vitals_table"),
       
       h4("Klassifikation"),
       verbatimTextOutput("classifier_output"),
-      tableOutput("classifier_table")
+      # tableOutput("classifier_table")
     )
   )
 )
@@ -158,6 +158,10 @@ server <- function(input, output, session) {
   
   #Classifier Results
   classifier_results <- reactiveVal(NULL)
+  
+  batch_runs <- reactiveVal(list())
+  batch_run_n <- reactiveVal(0)
+  current_batch_run_key <- reactiveVal(NULL)
   
   # FUNKTIONEN -----------------------------------------------------------------
   
@@ -226,6 +230,24 @@ server <- function(input, output, session) {
     subsample_run_n(n)
     current_subsample_run_key(key)
   }
+  
+  #Speicherung Batch Classifications
+  save_new_batch_run <- function(out_df, prompt_key) {
+    n <- batch_run_n() + 1
+    key <- sprintf("batch%02d", n)
+    
+    runs <- batch_runs()
+    runs[[key]] <- list(
+      df = out_df,
+      prompt_version = prompt_key,
+      created_at = Sys.time()
+    )
+    
+    batch_runs(runs)
+    batch_run_n(n)
+    current_batch_run_key(key)
+  }
+  
   
   # REACTIVES (LOAD) -----------------------------------------------------------
   
@@ -446,6 +468,7 @@ server <- function(input, output, session) {
     active_subsample(df)
   })
   
+  #Dropdown für subsample_run_view
   observe({
     runs <- subsample_runs()
     keys <- names(runs)
@@ -548,6 +571,7 @@ server <- function(input, output, session) {
     
   })
   
+  
   #Full Batch Classify
   observeEvent(input$run_classifier, {
     req(input$prompt_for_classifier)
@@ -609,7 +633,9 @@ server <- function(input, output, session) {
     })
     
     
-    classifier_results(do.call(rbind, results))
+    out <- do.call(rbind, results)
+    classifier_results(out) 
+    save_new_batch_run(out, prompt_key)
     
   })
   
@@ -708,19 +734,24 @@ server <- function(input, output, session) {
     df <- classifier_results()
     if (is.null(df)) return("Noch keine Klassifikation durchgeführt.")
     
+    run_key <- current_batch_run_key()
+    
     paste0(
+      "Batch-Run: ", ifelse(is.null(run_key), "-", run_key), "\n",
       "Dokumente: ", nrow(df), "\n",
+      "Prompt-Version: ", unique(df$prompt_version), "\n",
       "Erfolgreich: ", sum(df$success), "\n",
-      "Fehler: ", sum(!df$success)
+      "Fehler: ", sum(!df$success), "\n",
+      "Export bereit."
     )
   })
   
-  #Output Classifier Resultat Tabelle
-  output$classifier_table <- renderTable({
-    df <- classifier_results()
-    if (is.null(df)) return(NULL)
-    df
-  })
+  # #Output Classifier Resultat Tabelle
+  # output$classifier_table <- renderTable({
+  #   df <- classifier_results()
+  #   if (is.null(df)) return(NULL)
+  #   df
+  # }) --> wenn viele Textdokumente zu viel, dann einfach exportieren
   
   #Export Randomsample
   output$download_subsample_template <- downloadHandler(

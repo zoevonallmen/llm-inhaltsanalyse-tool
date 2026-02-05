@@ -75,7 +75,15 @@ ui <- fluidPage(
         "Codiertes Subsample ('Goldstandard') hochladen (CSV: doc_id, content, manual_code)",
         accept = c(".csv")
       ),
+      
+      selectInput("subsample_id_col", "ID-Spalte", choices = character(0)),
+      selectInput("subsample_content_col", "Textspalte", choices = character(0)),
+      selectInput("subsample_manual_col", "Manuelle Codierung/Goldstandard", choices = character(0)),
+      
       checkboxInput("show_only_mismatches", "Nur Fehlcodierungen anzeigen", value = FALSE),
+      
+      actionButton("lock_subsample", "Subsample übernehmen"),
+      actionButton("run_subsample_vitals", "Subsample testen (vitals)"),
       
       tags$hr(),
       
@@ -241,18 +249,15 @@ server <- function(input, output, session) {
       stringsAsFactors = FALSE
     )
   })
-    
-    
   
-  #Upload CSV Subsample
-  subsample_data <- reactive({
+  #CSV Subsample - Spaltenauswahl
+  subsample_df <- reactive({
     req(input$subsample_file)
     
     path <- input$subsample_file$datapath
     
     header_line <- readLines(path, n = 1, encoding = "UTF-8", warn = FALSE)
     sep_guess <- if (grepl(";", header_line) && !grepl(",", header_line)) ";" else ","
-    
     
     df <- tryCatch(
       read.csv(
@@ -265,8 +270,32 @@ server <- function(input, output, session) {
       error = function(e) NULL
     )
     req(!is.null(df))
+    req(nrow(df) > 0)
     
     names(df) <- trimws(names(df))
+    
+    if (ncol(df) == 1) {
+      stop("Subsample-CSV wurde als 1 Spalte eingelesen.")
+    }
+    
+    df
+  })
+  
+  #Upload CSV Subsample
+  subsample_data <- reactive({
+    df <- subsample_df()
+    
+    req(input$subsample_id_col)
+    req(input$subsample_content_col)
+    req(input$subsample_manual_col)
+    
+    id_col <- input$subsample_id_col
+    content_col <- input$subsample_content_col
+    manual_col <- input$subsample_manual_col
+    
+    df$doc_id <- as.character(df[[id_col]])
+    df$content <- as.character(df[[content_col]])
+    df$manual_code <- as.character(df[[manual_col]])
     
     if (ncol(df) == 1) {
       stop(paste0(
@@ -287,13 +316,10 @@ server <- function(input, output, session) {
       ))
     }
     
-    df$content <- as.character(df$content)
-    df$manual_code <- as.character(df$manual_code)
-    
     df <- df[!is.na(df$content) & nzchar(trimws(df$content)), ]
     df <- df[!is.na(df$manual_code) & nzchar(trimws(df$manual_code)), ]
     
-    df
+    df[, c("doc_id", "content", "manual_code")]
   })
   
   # OBSERVERS/EVENTS -----------------------------------------------------------
@@ -357,6 +383,21 @@ server <- function(input, output, session) {
       choices = keys,
       selected = current_prompt_key()
     )
+  })
+  
+  #Dropdowns mit Spaltennamen befüllen Subsample
+  observeEvent(subsample_df(), {
+    df <- subsample_df()
+    cols <- names(df)
+    
+    # Defaults: wenn Standardnamen existieren, vorselektieren
+    default_id <- if ("doc_id" %in% cols) "doc_id" else cols[1]
+    default_content <- if ("content" %in% cols) "content" else cols[1]
+    default_manual <- if ("manual_code" %in% cols) "manual_code" else cols[1]
+    
+    updateSelectInput(session, "subsample_id_col", choices = cols, selected = default_id)
+    updateSelectInput(session, "subsample_content_col", choices = cols, selected = default_content)
+    updateSelectInput(session, "subsample_manual_col", choices = cols, selected = default_manual)
   })
   
   #Übernehmen Subsample
@@ -440,7 +481,7 @@ server <- function(input, output, session) {
     ))
   })
   
-  #Dropdowns mit Spaltennamen befüllen
+  #Dropdowns mit Spaltennamen befüllen Batch 
   observeEvent(batch_df(), {
     df <- batch_df()
     cols <- names(df)

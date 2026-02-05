@@ -1,20 +1,23 @@
+
+## LIBRARIES -------------------------------------------------------------------
 library(shiny) 
 library(shinythemes)
-# library(vitals)
-# library(tibble)
 library(here)
 
+## LOAD KEY FUNCTIONS ----------------------------------------------------------
 source(here::here("R", "instructor.R"))
 source(here::here("R", "classifier.R"))
 
+## UI --------------------------------------------------------------------------
 
 ui <- fluidPage(
   theme = shinytheme("cyborg"),
-  
   titlePanel("Inputs für Promptgenerierung"),
   
   sidebarLayout(
     sidebarPanel(
+      
+      # PROMPT INPUTS ----------------------------------------------------------
       
       fileInput(
         "codebook_file",
@@ -42,6 +45,8 @@ ui <- fluidPage(
       
       tags$hr(),
       
+      # PROMPT OPTIMIZATION ----------------------------------------------------
+      
       textAreaInput(
         "optimizer_feedback",
         "Feedback für Optimierung",
@@ -53,6 +58,8 @@ ui <- fluidPage(
       
       tags$hr(),
       
+      # PROMPT SELECTION FOR CLASSIFIER ----------------------------------------
+      
       selectInput(
         "prompt_for_classifier",
         "Prompt-Version für Klassifizierung auswählen",
@@ -61,13 +68,7 @@ ui <- fluidPage(
       
       tags$hr(),
       
-      fileInput(
-        "doc_files",
-        "Textinputs hochladen (CSV)",
-        accept = c(".csv") #sollten noch andere Formate erlaubt werden? 
-      ),
-      
-      tags$hr(),
+      # SUBSAMPLE --------------------------------------------------------------
       
       fileInput(
         "subsample_file",
@@ -80,6 +81,14 @@ ui <- fluidPage(
       actionButton("run_subsample_vitals", "Subsample testen (vitals)"),
       
       tags$hr(),
+      
+      # BATCH ------------------------------------------------------------------
+      
+      fileInput(
+        "doc_files",
+        "Textinputs hochladen (CSV)",
+        accept = c(".csv") #sollten noch andere Formate erlaubt werden? 
+      ),
       
       actionButton("run_classifier", "Klassifizieren")
     ),
@@ -103,60 +112,38 @@ ui <- fluidPage(
       h4("Klassifikation"),
       verbatimTextOutput("classifier_output"),
       tableOutput("classifier_table"),
-      
-      
-      
-      
     )
   )
 )
 
-
+## SERVER ----------------------------------------------------------------------
 
 server <- function(input, output, session) {
   
-  ##INPUTS (Codebuch, Task Description, Output Requirements, Textinputs) ---------
+  # REACTIVE VALUES ------------------------------------------------------------
   
-  #Reactive Values für Prompt-Komponenten
+  #Prompt-Komponenten
   prompt_components <- reactiveVal(NULL)
   
-  #Reactive Values (Speichern) für Instructor Generate Output
+  #Instructor Generate Output
   instructor_generate_out <- reactiveVal(NULL)
   
-  #Upload Codebook
-  codebook_content <- reactive({
-    req(input$codebook_file)
-    readLines(input$codebook_file$datapath, encoding = "UTF-8")
-  })
+  #Versionierung Prompts
+  prompt_versions <- reactiveVal(list())
+  prompt_version_n <- reactiveVal(0)
+  current_prompt_key <- reactiveVal(NULL)
   
-  #Button: Inputs übernehmen
-  observeEvent(input$lock_inputs, {
-    
-    req(input$codebook_file) 
-    
-    prompt_components(list(
-      codebook            = paste(codebook_content(), collapse = "\n"),
-      task_description    = input$task_description,
-      output_requirements = input$output_requirements
-    ))
-  })
+  #Subsample
+  active_subsample <- reactiveVal(NULL)
+  eval_vitals_df <- reactiveVal(NULL)
+  eval_vitals_metrics <- reactiveVal(NULL)
   
-  #Anzeige übernommene Inputs für User ==> kann dann evl später auch weg?
-  output$active_inputs <- renderText({
-    comps <- prompt_components()
-    if(is.null(comps)) return("Noch keine Inputs übernommen.")
-    
-    paste0(
-      "Task Description:\n", comps$task_description,
-      "\n\nOutput Requirements:\n", comps$output_requirements,
-      "\n\nCodebook: hochgeladen"
-    )
-  })
+  #Classifier Results
+  classifier_results <- reactiveVal(NULL)
   
+  # FUNKTIONEN -----------------------------------------------------------------
   
-  ##PROMPTS IN XML TAGS (für Instructor Generate) --------------------------------
-  
-  #Generierung XML-Promptinputs für Instructor
+  #Generierung XML-Prompt-Inputs für Instructor (Generate)
   generate_instructor_prompt <- function(comps) {
     paste0(
       "<codebook>\n", comps$codebook, "\n</codebook>\n\n",
@@ -165,14 +152,7 @@ server <- function(input, output, session) {
     )
   }
   
-  
-  ##VERSIONIERUNG DER PROMPTS ----------------------------------------------------
-  
-  prompt_versions <- reactiveVal(list())
-  prompt_version_n <- reactiveVal(0)
-  current_prompt_key <- reactiveVal(NULL)
-  
-  #neue Prompt als nächste Version speichern 
+  #Neue Prompt als nächste Version speichern 
   save_new_version <- function(prompt_text) {
     n <- prompt_version_n() + 1
     key <- sprintf("v%02d", n)
@@ -186,7 +166,7 @@ server <- function(input, output, session) {
     
   }
   
-  #current_prompz holen für Optimizer
+  #Current_prompt holen für Optimizer
   get_current_prompt <- function() {
     key <- current_prompt_key()
     req(key)
@@ -197,20 +177,30 @@ server <- function(input, output, session) {
     versions[[key]]
   }
   
-  #Dropdown für Prompt-Versionen im Classifier
-  observe({
-    versions <- prompt_versions()
-    keys <- names(versions)
-    
-    updateSelectInput(
-      session,
-      "prompt_for_classifier",
-      choices = keys,
-      selected = current_prompt_key()
+  #Generierung XML-Prompt-Inputs für Instructor (Optimize)
+  build_optimizer_input_xml <- function(current_prompt, comps, feedback) {
+    source_materials_xml <- paste0(
+      "<codebook>\n", comps$codebook, "\n</codebook>\n\n",
+      "<task_description>\n", comps$task_description, "\n</task_description>\n\n",
+      "<output_requirements>\n", comps$output_requirements, "\n</output_requirements>"
     )
+    
+    paste0(
+      "<current_prompt>\n", current_prompt, "\n</current_prompt>\n\n",
+      "<source_materials>\n", source_materials_xml, "\n</source_materials>\n\n",
+      "<feedback>\n", feedback, "\n</feedback>"
+    )
+  }
+  
+  # REACTIVES (LOAD) -----------------------------------------------------------
+  
+  #Upload Codebook
+  codebook_content <- reactive({
+    req(input$codebook_file)
+    readLines(input$codebook_file$datapath, encoding = "UTF-8")
   })
   
-  #CSV einlesen
+  #Upload CSV full Batch Classification
   docs_list <- reactive({
     req(input$doc_files)
     
@@ -230,13 +220,7 @@ server <- function(input, output, session) {
     )
   })
   
-  #Subsample
-  active_subsample <- reactiveVal(NULL)
-  
-  eval_vitals_df <- reactiveVal(NULL)
-  eval_vitals_metrics <- reactiveVal(NULL)
-  
-  #Subsample CSV:
+  #Upload CSV Subsample
   subsample_data <- reactive({
     req(input$subsample_file)
     
@@ -288,31 +272,21 @@ server <- function(input, output, session) {
     df
   })
   
+  # OBSERVERS/EVENTS -----------------------------------------------------------
   
-  
-  ## Batch Klassifikation Ergebnisse speichern------------------------------------
-  
-  classifier_results <- reactiveVal(NULL)
-  
-  ##PROMPTS IN XML (für Instructor Optimize)--------------------------------------
-  
-  build_optimizer_input_xml <- function(current_prompt, comps, feedback) {
-    source_materials_xml <- paste0(
-      "<codebook>\n", comps$codebook, "\n</codebook>\n\n",
-      "<task_description>\n", comps$task_description, "\n</task_description>\n\n",
-      "<output_requirements>\n", comps$output_requirements, "\n</output_requirements>"
-    )
+  #Prompt-Komponenten übernehmen
+  observeEvent(input$lock_inputs, {
     
-    paste0(
-      "<current_prompt>\n", current_prompt, "\n</current_prompt>\n\n",
-      "<source_materials>\n", source_materials_xml, "\n</source_materials>\n\n",
-      "<feedback>\n", feedback, "\n</feedback>"
-    )
-  }
+    req(input$codebook_file) 
+    
+    prompt_components(list(
+      codebook            = paste(codebook_content(), collapse = "\n"),
+      task_description    = input$task_description,
+      output_requirements = input$output_requirements
+    ))
+  })
   
-  ##PROMPT GENERIERUNG (Instructor; Modus Generate) ------------------------------
-  
-  #Button: Prompt generieren (XML an instructor)
+  #Generate Prompt (XML an instructor)
   observeEvent(input$run_instructor_generate, {
     comps <- prompt_components()
     req(comps)
@@ -328,8 +302,7 @@ server <- function(input, output, session) {
     
   })
   
-  ##PROMPT OPTIMIERUNG (Instructor; Modus Optimize) ------------------------------
-  
+  #Optimize Prompt 
   observeEvent(input$run_instructor_optimize, {
     comps <- prompt_components()
     req(comps)
@@ -349,88 +322,27 @@ server <- function(input, output, session) {
     
   })
   
+  #Dropdown für Prompt-Versionen
+  observe({
+    versions <- prompt_versions()
+    keys <- names(versions)
+    
+    updateSelectInput(
+      session,
+      "prompt_for_classifier",
+      choices = keys,
+      selected = current_prompt_key()
+    )
+  })
   
-  
-  ##VITALS-FUNKTIONEN: SOLVER, SCORER, METRICS -----------------------------------
-  
-  # #Helper für Reasoning aus Subsample
-  # extract_reasoning_from_chat <- function(chat_obj) {
-  #   txt <- tryCatch(as.character(chat_obj), error = function(e) NULL)
-  #   if (is.null(txt) || !nzchar(txt)) return(NA_character_)
-  #   
-  #   json_candidate <- extract_json(txt)
-  #   if (is.null(json_candidate)) json_candidate <- txt
-  #   
-  #   parsed <- tryCatch(jsonlite::fromJSON(json_candidate), error = function(e) NULL)
-  #   if (is.null(parsed) || is.null(parsed$reasoning)) return(NA_character_)
-  #   
-  #   as.character(parsed$reasoning)
-  # }
-  # 
-  
-  # #SOLVER (solver ruft classifier auf)
-  # solver_classifier_subsample <- function(input, prompt_text) {
-  #   #input = texte (content) / prompt_text = ausgewählte Prompt-Version
-  #   
-  #   per_sample <- lapply(seq_along(input), function(i) {
-  #     
-  #     chat_obj <- ellmer::chat_huggingface(
-  #       system_prompt = SYSTEM_PROMPT_CLASSIFIER,
-  #       model = LLAMA_MODEL,
-  #       credentials = function() API_KEY,
-  #       params = list(
-  #         temperature = 0.0,
-  #         max_tokens  = 300,
-  #         seed        = 24
-  #       ),
-  #       echo = "none"
-  #     )
-  #     
-  #     res <- classifier(
-  #       article_text = input[[i]],
-  #       prompt = prompt_text,
-  #       chat_object = chat_obj
-  #     )
-  #     
-  #     list(
-  #       code = if (is.null(res$code)) NA_character_ else as.character(res$code),
-  #       chat = chat_obj
-  #     )
-  #   })
-  #   
-  #   list(
-  #     result      = vapply(per_sample, `[[`, "", "code"),
-  #     solver_chat = lapply(per_sample, `[[`, "chat")
-  #   )
-  # }
-  
-  # #SCORER (result gegeb target matchen)
-  # scorer_exact_match <- function(sample) {
-  #   result <- sample$result
-  #   target <- sample$target
-  #   
-  #   s <- ifelse(!is.na(result) & result == target, "C", "I")
-  #   list(score = s, #weil: scorer must return a list with at least sclot score
-  #        pred = result,
-  #        gold = target) 
-  # }
-  # 
-  # #METRICS: ACCURACY
-  # metric_accuracy <- function(score) {
-  #   mean(score =="C", na.rm = TRUE)
-  # }
-  
-  
-  ##SUBSAMLPLE -------------------------------------------------------------------
-  
-  #Upload/Übernehmen Subsample
+  #Übernehmen Subsample
   observeEvent(input$lock_subsample, {
     df <- subsample_data()
     req(df)
     active_subsample(df)
   })
   
-  #Button: Task bauen/ausführen (Subsample klassifizieren, vitals Analysis)
+  #Subsample klassifizieren, Accuracy rechnen, Reasoning ausgeben
   observeEvent(input$run_subsample_vitals, {
     
     df <- active_subsample()
@@ -495,8 +407,7 @@ server <- function(input, output, session) {
     
     out <- do.call(rbind, out_list)
     
-    # Accuracy selbst berechnen (nur gültige Vergleiche zählen)
-    acc <- mean(out$match, na.rm = TRUE)
+    acc <- mean(out$match, na.rm = TRUE)# Accuracy selbst berechnen (nur gültige Vergleiche zählen)
     
     eval_vitals_df(out)
     eval_vitals_metrics(list(
@@ -505,11 +416,7 @@ server <- function(input, output, session) {
     ))
   })
   
-  
-  
-  
-  ##KLASSIFIZIEREN ---------------------------------------------------------------
-  
+  #Full Batch Classify
   observeEvent(input$run_classifier, {
     req(input$prompt_for_classifier)
     versions <- prompt_versions()
@@ -571,7 +478,21 @@ server <- function(input, output, session) {
     
   })
   
-  ##AUSGABE GENERIERTER/OPTIMIERTER PROMPT (neuste Version) ----------------------
+  # OUTPUTS ---------------------------------------------------------------------
+  
+  #Anzeige übernommene Inputs für User ==> kann dann evl später auch weg?
+  output$active_inputs <- renderText({
+    comps <- prompt_components()
+    if(is.null(comps)) return("Noch keine Inputs übernommen.")
+    
+    paste0(
+      "Task Description:\n", comps$task_description,
+      "\n\nOutput Requirements:\n", comps$output_requirements,
+      "\n\nCodebook: hochgeladen"
+    )
+  })
+  
+  #Anzeige generierte/optimierte Prompt (aktuellste Version)
   output$current_prompt <- renderText({
     n <- prompt_version_n()
     key <- current_prompt_key()
@@ -588,24 +509,19 @@ server <- function(input, output, session) {
     
   })
   
-  
-  ##OUPTPUT SUBSAMPLE ------------------------------------------------------------
-  
-  #Anzeige Subsample (kann raus?)
+  #Anzeige uploaded Subsample (kann raus?)
   output$active_subsample <- renderText({
     df <- active_subsample()
     if (is.null(df)) return("Noch kein Subsample übernommen.")
     paste0("Aktives Subsample: ", nrow(df), " Zeilen") 
   })
-  
   output$subsample_table <- renderTable({
     df <- active_subsample()
     if (is.null(df)) return(NULL)
     head(df, 50)
   })
   
-  
-  #Anzeigen Output Tabelle/Summary
+  #Anzeigen Output Summary für Subsample
   output$eval_vitals_summary <- renderText({
     m <- eval_vitals_metrics()
     df <- eval_vitals_df()
@@ -619,6 +535,7 @@ server <- function(input, output, session) {
     )
   })
   
+  #Anzeigen Output Tabelle für Subsample
   output$eval_vitals_table <- renderTable({
     df <- eval_vitals_df()
     if (is.null(df)) return(NULL)
@@ -627,7 +544,7 @@ server <- function(input, output, session) {
     df[, c("doc_id", "manual_code", "pred_code", "match", "reasoning")]
   })
   
-  ##OUTPUT CLASSIFIER RESULTAT ---------------------------------------------------
+  #Output Classifier Resultat
   output$classifier_output <- renderText({
     df <- classifier_results()
     if (is.null(df)) return("Noch keine Klassifikation durchgeführt.")
@@ -639,18 +556,14 @@ server <- function(input, output, session) {
     )
   })
   
+  #Output Classifier Resultat Tabelle
   output$classifier_table <- renderTable({
     df <- classifier_results()
     if (is.null(df)) return(NULL)
     df
   })
   
-  
-  
 }
-
-
-
 
 
 shinyApp(ui = ui, server = server) 

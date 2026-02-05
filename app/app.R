@@ -87,9 +87,9 @@ ui <- fluidPage(
         accept = c(".csv") #sollten noch andere Formate erlaubt werden? 
       ),
       
-      numericInput("subsample_n", "Zufalls-Subsample (N)", value = 50, min = 1, step = 1),
-      actionButton("draw_subsample", "Subsample ziehen (aus Datensatz)"),
-      downloadButton("download_subsample_template", "Subsample exportieren (CSV Template)"),
+      selectInput("batch_content_col", "Textspalte", choices = character(0)),
+      selectInput("batch_id_col", "ID-Spalte", choices = character(0)),
+      tags$hr(),
       
       actionButton("run_classifier", "Klassifizieren")
     ),
@@ -109,12 +109,6 @@ ui <- fluidPage(
       h4("Subsample Evaluation (vitals)"),
       verbatimTextOutput("eval_vitals_summary"),
       tableOutput("eval_vitals_table"),
-      
-      h4("Confusion Matrix"),
-      tableOutput("eval_confusion_table"),
-      
-      h4("Metriken pro Code"),
-      tableOutput("eval_metrics_table"),
       
       h4("Klassifikation"),
       verbatimTextOutput("classifier_output"),
@@ -144,8 +138,6 @@ server <- function(input, output, session) {
   active_subsample <- reactiveVal(NULL)
   eval_vitals_df <- reactiveVal(NULL)
   eval_vitals_metrics <- reactiveVal(NULL)
-  
-  drawn_subsample <- reactiveVal(NULL)
   
   #Classifier Results
   classifier_results <- reactiveVal(NULL)
@@ -209,25 +201,48 @@ server <- function(input, output, session) {
     readLines(input$codebook_file$datapath, encoding = "UTF-8")
   })
   
-  #Upload CSV full Batch Classification
-  docs_list <- reactive({
+  #CSV Batch - Spaltenauswahl
+  batch_df <- reactive({
     req(input$doc_files)
     
     path <- input$doc_files$datapath
-    df <- read.csv(path, stringsAsFactors = FALSE)
+    df <- read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
+    req(nrow(df) > 0)
+    df
+  })
+  
+  #Upload CSV full Batch Classification
+  docs_list <- reactive({
     
-    if (!"content" %in% names(df)) {
-      stop("CSV muss eine Spalte 'content' enthalten") #muss evtl. noch angepasst werden, wen nicht immer alle relevanten textspalten content heissen..
+    df <- batch_df()
+    req(input$batch_content_col)
+    req(input$batch_content_col)
+    
+    content_col <- input$batch_content_col
+    id_col <- input$batch_id_col
+    
+    if (!content_col %in% names(df)) {
+      stop("Gewählte Textspalte existiert nicht im Datensatz.")
+    }
+    if (!id_col %in% names(df)) {
+      stop("Gewählte ID-Spalte existiert nicht im Datensatz.")
     }
     
-    texts <- df$content
-    texts <- texts[!is.na(texts) & nzchar(trimws(texts))]
+    content <- as.character(df[[content_col]])
+    keep <- !is.na(content) & nzchar(trimws(content))
+    df <- df[keep, , drop = FALSE]
+    content <- content[keep]
     
-    setNames(
-      as.list(texts),
-      paste0("row_", seq_along(texts))
+    doc_id <- as.character(df[[id_col]])
+    
+    data.frame(
+      doc_id = doc_id,
+      content = content,
+      stringsAsFactors = FALSE
     )
   })
+    
+    
   
   #Upload CSV Subsample
   subsample_data <- reactive({
@@ -344,28 +359,6 @@ server <- function(input, output, session) {
     )
   })
   
-  #Randomsample ziehen
-  observeEvent(input$draw_subsample, {
-    docs <- docs_list()
-    req(length(docs) > 0)
-    req(input$subsample_n)
-    
-    n_total <- length(docs)
-    n_take <- min(as.integer(input$subsample_n), n_total)
-    
-    set.seed(24)  # optional: reproduzierbar; kannst du auch rausnehmen
-    idx <- sample(seq_len(n_total), size = n_take, replace = FALSE)
-    
-    df <- data.frame(
-      doc_id = paste0("row_", idx),
-      content = unlist(docs[idx], use.names = FALSE),
-      stringsAsFactors = FALSE
-    )
-    
-    drawn_subsample(df)
-  })
-  
-  
   #Übernehmen Subsample
   observeEvent(input$lock_subsample, {
     df <- subsample_data()
@@ -447,6 +440,25 @@ server <- function(input, output, session) {
     ))
   })
   
+  #Dropdowns mit Spaltennamen befüllen
+  observeEvent(batch_df(), {
+    df <- batch_df()
+    cols <- names(df)
+    
+    default_content <- if ("content" %in% cols) "content" else cols[1]
+    
+    updateSelectInput(session, "batch_content_col",
+                      choices = cols, selected = default_content)
+    
+    updateSelectInput(
+      session,
+      "batch_id_col",
+      choices = cols,
+      selected = if ("doc_id" %in% cols) "doc_id" else cols[1]
+    )
+    
+  })
+  
   #Full Batch Classify
   observeEvent(input$run_classifier, {
     req(input$prompt_for_classifier)
@@ -456,13 +468,15 @@ server <- function(input, output, session) {
     req(prompt_text)
     
     docs <- docs_list()
-    req(length(docs) > 0)
+    req(nrow(docs) > 0)
     
     withProgress(message = "Batch-Klassifikation läuft...", value = 0, {
-      results <- lapply(seq_along(docs), function(i) {
-        incProgress(1/length(docs), detail = paste("Dokument", i))
+      n <- nrow(docs)
+      results <- lapply(seq_len(n), function(i) {
+        incProgress(1/n, detail = paste("Dokument", i, "von", n))
         
-        article_text <- docs[[i]]
+        article_text <- docs$content[i]
+        doc_id <- as.character(docs$doc_id[i])
         
         chat_obj <- ellmer::chat_huggingface(
           system_prompt = SYSTEM_PROMPT_CLASSIFIER,
@@ -493,6 +507,7 @@ server <- function(input, output, session) {
         
         data.frame(
           row = i,
+          doc_id = doc_id,
           prompt_version = prompt_key,
           success = isTRUE(res$success),
           code = if (is.null(res$code)) NA else as.character(res$code),
@@ -509,7 +524,7 @@ server <- function(input, output, session) {
     
   })
   
-  # OUTPUTS ---------------------------------------------------------------------
+  # OUTPUTS --------------------------------------------------------------------
   
   #Anzeige übernommene Inputs für User ==> kann dann evl später auch weg?
   output$active_inputs <- renderText({
@@ -602,19 +617,6 @@ server <- function(input, output, session) {
     if (is.null(df)) return(NULL)
     df
   })
-  
-  #Random Sample download
-  output$download_subsample_template <- downloadHandler(
-    filename = function() paste0("subsample_template_", Sys.Date(), ".csv"),
-    content = function(file) {
-      df <- drawn_subsample()
-      req(df)
-      
-      out <- df
-      out$manual_code <- "" #->downloaden & manuell codieren
-      write.csv(out, file, row.names = FALSE, fileEncoding = "UTF-8")
-    }
-  )
   
 }
 

@@ -111,10 +111,9 @@ ui <- fluidPage(
       h4("Prompt-Komponenten übernommen"),
       verbatimTextOutput("active_inputs"),
       
+      h4("Prompts anzeigen"),
       selectInput("prompt_to_view", "Prompt-Version anzeigen", choices = character(0)),
       verbatimTextOutput("prompt_view"),
-      h4("Aktuelle Task Prompt"),
-      verbatimTextOutput("current_prompt"),
       
       h4("Subsample Anzeige"),
       tableOutput("subsample_table"),
@@ -613,23 +612,6 @@ server <- function(input, output, session) {
       "\n\nOutput Requirements:\n", comps$output_requirements,
       "\n\nCodebook: hochgeladen"
     )
-  })
-  
-  #Anzeige generierte/optimierte Prompt (aktuellste Version)
-  output$current_prompt <- renderText({
-    n <- prompt_version_n()
-    key <- current_prompt_key()
-    if (n == 0) return("Noch keine Prompt Version vorhanden")
-    
-    versions <- prompt_versions()
-    prompt_text <- versions[[key]]
-    
-    paste0(
-      "Aktuelle Prompt Version: ", key, "\n",
-      "-------------------------\n",
-      prompt_text
-    )
-    
   })
   
   #Prompt anzeigen für gewälte Version

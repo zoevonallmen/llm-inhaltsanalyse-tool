@@ -75,6 +75,7 @@ ui <- fluidPage(
         "Codiertes Subsample ('Goldstandard') hochladen (CSV: doc_id, content, manual_code)",
         accept = c(".csv")
       ),
+      checkboxInput("show_only_mismatches", "Nur Fehlcodierungen anzeigen", value = FALSE),
       
       actionButton("lock_subsample", "Subsample übernehmen"),
       
@@ -433,7 +434,7 @@ server <- function(input, output, session) {
         
         article_text <- docs[[i]]
         
-        chat_obj <- hf_model <- ellmer::chat_huggingface(
+        chat_obj <- ellmer::chat_huggingface(
           system_prompt = SYSTEM_PROMPT_CLASSIFIER,
           model = LLAMA_MODEL,
           credentials = function() API_KEY,
@@ -510,11 +511,6 @@ server <- function(input, output, session) {
   })
   
   #Anzeige uploaded Subsample (kann raus?)
-  output$active_subsample <- renderText({
-    df <- active_subsample()
-    if (is.null(df)) return("Noch kein Subsample übernommen.")
-    paste0("Aktives Subsample: ", nrow(df), " Zeilen") 
-  })
   output$subsample_table <- renderTable({
     df <- active_subsample()
     if (is.null(df)) return(NULL)
@@ -540,8 +536,22 @@ server <- function(input, output, session) {
     df <- eval_vitals_df()
     if (is.null(df)) return(NULL)
     
+    if (isTRUE(input$show_only_mismatches)) {
+      df <- df[df$match == FALSE, ]
+    }
+  
+    subs <- active_subsample()
+    if (!is.null(subs)) {
+      df <- merge(df, subs[, c("doc_id", "content")], by = "doc_id", all.x = TRUE)
+      df$content <- ifelse(
+        is.na(df$content),
+        NA,
+        paste0(substr(df$content, 1, 200), ifelse(nchar(df$content) > 200, " ...", ""))
+      )
+    }
+    
     df <- df[order(df$match, decreasing = TRUE), ]
-    df[, c("doc_id", "manual_code", "pred_code", "match", "reasoning")]
+    df[, c("doc_id", "manual_code", "pred_code", "match", "reasoning", "content")]
   })
   
   #Output Classifier Resultat

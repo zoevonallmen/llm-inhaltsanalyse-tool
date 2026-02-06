@@ -43,7 +43,13 @@ Für jede Prompt V speichern:
 - genutzte Prompt-V
 - Klassifikation, Verglech manuelle Codierung, Accuracy, Reasoning
 (- Zeitpunkt)
-- reasoning (eigentlich einfach wenn nötig, oder irgendwie kennzeichnen ob man aus dem Reasoining was hatte das problematisch war.....) hmmmmmmmm Lösung finden...........
+- reasoning (eigentlich einfach wenn nötig, oder irgendwie kennzeichnen ob man aus dem Reasoining was hatte das problematisch war.....) hmmmmmmmm Lösung finden..........
+=> eigentlich müsst ich dem modell ja auch sagen können, "hier ist die falsche Klassifizierung, das reasoning ist falsch weil ...." ; durch umformulierung kategorien/task/regeln versuchen zu adressieren
+-> kein Problem mit Lerneffekt an Beispiel weil instructor =/= classifier. + jeder artikel/textdoc neu initialisiert
+-> müsste ich subsample output mit optimizer verknüpfen..
+-> aber: Instructor soll nicht an Beispiel lernen (kein beispieltext eingeben und sagen das ist falsch); soll generalisierbare Regel erstellen/richtiges Verständnis
+-> Option: im Feedback schreiben: welche Art von Fehler (Kategorie/Definition oder Entscheidungskriterium), welcher Code (zb welche Kategorie) und aber auch Referenz auf subsample run, und doc_id für logging.. dann ist es ja durch feedback export direkt drin
+-> macht das Sinn???? ehhhhh vielleicht ausprobieren obs so funktioniert wie ich's mir vorstelle?
 
 (4) Prompt-Auswahl; aber ist ja implizit, welche Prompt-V wurde für full Batch genutzt)
 

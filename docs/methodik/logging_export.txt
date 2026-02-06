@@ -1,5 +1,5 @@
 Zeil: Workflow transparent & reproduzierbar machen. 
---> Entscheidungsprozess nachvollziehbar machen, Prompt-Engineering dokumenieren, (versuchen) Transparenz zu reduzieren
+--> Entscheidungsprozess nachvollziehbar machen, Prompt-Engineering dokumenieren, (versuchen) Intransparenz zu reduzieren
 
 Was wird gespeichert?
 ---------------------
@@ -61,6 +61,40 @@ Für jede Prompt V speichern:
 6) Metadata
 - Modelldaten
 
+---> für Entscheidungsgrundlage (Subsample Eval, reasoning, Feedback) irgendiwe nicht gute Struktur, müsste wie den Ablauf besser loggen...
+
+Alternativer Vorschlag: 
+
+Ein File direkt für den ganzen Prozess/Ablauf machen, dort Feedback integrieren: 
+
+LOGGING
+-------
+
+1) Ursprüngliche Inputs: 
+<Codebook>
+<task_description>
+<output_requirements>
+=> ein Mal definiert/unverändert
+=> Logging: vollständiger Text, Zeitpukt
+
+2) Prompts
+- Liste aller Prompt-Versionen, vollständig.
+
+3) History/Events
+- voller Ablauf, enthält Feedback Texte, alte & neue Prompts, Timestamps
+
+4) Subsample-Runs/Validierung
+- doc_id, manual_code, pred_code, match, reasoning, accuracy, prompt_version
+
+
+5) Batch Klassifikation
+- verwendete Prompt-V
+- vollst. Klassifikationsergebnisse: doc:id, code, reasoning, success
+- aktuell noch reasoning, könnte aber raus
+
+6) Metadata
+- Modelldaten
+
 
 EXPORT: 
 -------
@@ -68,20 +102,18 @@ zip file?
 
 .zip
 |
---inputs/
+--01_inputs/
 |  |--codebook.txt
 |  |--task_description.txt
 |  |--output_requirements.txt
 |
-|--prompts/
+|--02_prompts/
 |  |--prompt_v1.txt
 |  |--prompt_v02.txt
 |  |--...
 |
-|--feedback/
-|  |--feedback_v02.txt
-|  |--feedback_v03.txt
-|  |--...
+|--03_events/
+|  |--events.json
 |
 |--subsample_runs/
 |  |--run_01.csv

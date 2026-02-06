@@ -84,12 +84,13 @@ LOGGING
 - voller Ablauf, enthält Feedback Texte, alte & neue Prompts, Timestamps
 
 4) Subsample-Runs/Validierung
-- doc_id, manual_code, pred_code, match, reasoning, accuracy, prompt_version
+- doc_id, manual_code, pred_code, match, reasoning
+- accuracy, prompt_version => 'einmalig'/nicht für jedes doc, in events
 
 
 5) Batch Klassifikation
-- verwendete Prompt-V
-- vollst. Klassifikationsergebnisse: doc:id, code, reasoning, success
+- verwendete Prompt-Version -> in events
+- vollst. Klassifikationsergebnisse: doc_id, code, reasoning, success
 - aktuell noch reasoning, könnte aber raus
 
 6) Metadata
@@ -98,9 +99,13 @@ LOGGING
 
 EXPORT: 
 -------
-zip file?
+zip file
 
 .zip
+|
+|--00_metadata/
+|  |--model_?.json
+|  |--timestamts_?.json
 |
 --01_inputs/
 |  |--codebook.txt
@@ -115,17 +120,14 @@ zip file?
 |--03_events/
 |  |--events.json
 |
-|--subsample_runs/
+|--04_subsample_runs/
 |  |--run_01.csv
 |  |--run_02.csv
 |  |--...
 |
-|--batch_results/
-|  |--batch_01.csv
-|  |--batch_02.csv
-|  |--...
-|
-|--metadata/
-   |--model_?.json
-   |--timestamts_?.json
+|--05_batch_results/
+   |--batch_01.csv
+   |--batch_02.csv
+   |--...
+
 

@@ -3,6 +3,7 @@
 library(shiny) 
 library(shinythemes)
 library(here)
+library(jsonlite) #lad ich schon im classifier, reicht?
 
 ## LOAD KEY FUNCTIONS ----------------------------------------------------------
 source(here::here("R", "instructor.R"))
@@ -124,7 +125,10 @@ ui <- fluidPage(
       
       h4("Klassifikation"),
       verbatimTextOutput("classifier_output"),
-      # tableOutput("classifier_table")
+      
+      tags$hr(),
+      
+      downloadButton("download_audit_zip", "Audt Trail exportieren (ZIP)")
     )
   )
 )
@@ -162,6 +166,15 @@ server <- function(input, output, session) {
   batch_runs <- reactiveVal(list())
   batch_run_n <- reactiveVal(0)
   current_batch_run_key <- reactiveVal(NULL)
+  
+  #Logging
+  process_log <- reactiveVal(list(
+    meta = list(created_at = Sys.time()),
+    inputs = NULL,
+    prompt_events = list(),
+    subsample_events = list(),
+    batch_events = list()
+  ))
   
   # FUNKTIONEN -----------------------------------------------------------------
   
@@ -246,6 +259,14 @@ server <- function(input, output, session) {
     batch_runs(runs)
     batch_run_n(n)
     current_batch_run_key(key)
+  }
+  
+  #Log Eintrag hinzufügen: 
+  add_log_event <- function(section, entry) {
+    log <- process_log()
+    if (is.null(log[[section]])) log[[section]] <- list()
+    log[[section]][[length(log[[section]]) + 1]] <- entry
+    process_log(log)
   }
   
   
@@ -361,12 +382,30 @@ server <- function(input, output, session) {
   observeEvent(input$lock_inputs, {
     
     req(input$codebook_file) 
+    req(nzchar(trimws(input$task_description)))
+    req(nzchar(trimws(input$output_requirements)))
     
     prompt_components(list(
       codebook            = paste(codebook_content(), collapse = "\n"),
       task_description    = input$task_description,
       output_requirements = input$output_requirements
     ))
+    
+    #loggen
+    log <- process_log()
+    log$inputs <- list(
+      saved_at = Sys.time(),
+      codebook = paste(codebook_content(), collapse = "\n"),
+      task_description = input$task_description,
+      output_requirements = input$output_requirements
+    )
+    process_log(log)
+    
+    add_log_event("prompt_events", list(
+      type = "inputs_locked",
+      at = Sys.time()
+    ))
+    
   })
   
   #Generate Prompt (XML an instructor)
@@ -376,12 +415,24 @@ server <- function(input, output, session) {
     
     xml <- generate_instructor_prompt(comps)
     
+    #logggen
+    add_log_event("prompt_events", list(
+      type = "generate_request",
+      at = Sys.time()
+    ))
+    
     instructor_generated_prompt <- tryCatch(
       hf_instructor_generate$chat(xml, echo = "none"),
       error = function(e) paste("ERROR", e$message)
     )
     
     save_new_version(instructor_generated_prompt)
+    
+    add_log_event("prompt_events", list(
+      type = "generate_result",
+      at = Sys.time(),
+      new_prompt_key = current_prompt_key()
+    ))
     
   })
   
@@ -396,12 +447,26 @@ server <- function(input, output, session) {
     current_prompt <- get_current_prompt()
     optimizer_input <- build_optimizer_input_xml(current_prompt, comps, feedback)
     
+    add_log_event("prompt_events", list(
+      type = "optimize_request",
+      at = Sys.time(),
+      feedback = input$optimizer_feedback,
+      base_prompt_key = current_prompt_key()
+    ))
+    
     optimized_prompt <- tryCatch(
       hf_instructor_optimize$chat(optimizer_input, echo = "none"),
       error = function(e) paste("ERROR", e$message)
     )
     
     save_new_version(optimized_prompt)
+    
+    add_log_event("prompt_events", list(
+      type = "optimize_result",
+      at = Sys.time(),
+      new_prompt_key = current_prompt_key()
+    )) 
+    
     
   })
   
@@ -550,6 +615,14 @@ server <- function(input, output, session) {
     
     save_new_subsample_run(out, prompt_key, acc)
     
+    add_log_event("subsample_events", list(
+      at = Sys.time(),
+      run_key = current_subsample_run_key(),
+      prompt_key = prompt_key,
+      n_docs = nrow(out),
+      accuracy = acc
+    ))
+    
   })
   
   #Dropdowns mit Spaltennamen befüllen Batch 
@@ -619,14 +692,12 @@ server <- function(input, output, session) {
         end_time <- Sys.time() #raus? 
         
         data.frame(
-          row = i,
           doc_id = doc_id,
-          prompt_version = prompt_key,
+          #prompt_version = prompt_key, --> kann man thoer. rausnehmen, weil ist im audit (events.json)
           success = isTRUE(res$success),
           code = if (is.null(res$code)) NA else as.character(res$code),
-          reasoning = if (is.null(res$reasoning)) NA else as.character(res$reasoning),
-          latency_s = as.numeric(difftime(end_time, start_time, units = "secs")),
-          error = if (is.null(res$error)) NA else as.character(res$error),
+          #reasoning = if (is.null(res$reasoning)) NA else as.character(res$reasoning), -> evtl auch raus, könnte zu viel werden, bei grossen textmengen. ausser noch nachträglich validieren? 
+          #latency_s = as.numeric(difftime(end_time, start_time, units = "secs")), -> is des nötig?
           stringsAsFactors = FALSE
         )
       })
@@ -637,7 +708,16 @@ server <- function(input, output, session) {
     classifier_results(out) 
     save_new_batch_run(out, prompt_key)
     
+    add_log_event("batch_events", list(
+      at = Sys.time(),
+      run_key = current_batch_run_key(),
+      prompt_key = prompt_key,
+      n_docs = nrow(out),
+      n_success = sum(out$success),
+    ))
+    
   })
+  
   
   # OUTPUTS --------------------------------------------------------------------
   
@@ -741,17 +821,10 @@ server <- function(input, output, session) {
       "Dokumente: ", nrow(df), "\n",
       "Prompt-Version: ", unique(df$prompt_version), "\n",
       "Erfolgreich: ", sum(df$success), "\n",
-      "Fehler: ", sum(!df$success), "\n",
       "Export bereit."
     )
   })
-  
-  # #Output Classifier Resultat Tabelle
-  # output$classifier_table <- renderTable({
-  #   df <- classifier_results()
-  #   if (is.null(df)) return(NULL)
-  #   df
-  # }) --> wenn viele Textdokumente zu viel, dann einfach exportieren
+
   
   #Export Randomsample
   output$download_subsample_template <- downloadHandler(
@@ -768,6 +841,74 @@ server <- function(input, output, session) {
       write.csv(out, file, row.names = FALSE, fileEncoding = "UTF-8")
     }
   )
+  
+  #EXPORT ZIP
+  output$download_audit_zip <- downloadHandler(
+    filename = function() {
+      paste0("llm_audit_trail_", Sys.Date(), ".zip")
+    },
+    content = function(file) {
+      
+      log <- process_log()
+      req(!is.null(log$inputs)) 
+      req(length(prompt_versions()) > 0)
+      
+      root <- tempfile("audit_")
+      dir.create(root, recursive = TRUE)
+      
+      dir_inputs    <- file.path(root, "01_inputs")
+      dir_prompts   <- file.path(root, "02_prompts")
+      dir_events    <- file.path(root, "03_events")
+      dir_subsample <- file.path(root, "04_subsample_runs")
+      dir_batch     <- file.path(root, "05_batch_runs")
+      dir.create(dir_inputs); dir.create(dir_prompts); dir.create(dir_events)
+      dir.create(dir_subsample); dir.create(dir_batch)
+      
+      #inputs
+      writeLines(log$inputs$codebook, file.path(dir_inputs, "codebook.txt"), useBytes = TRUE)
+      writeLines(as.character(log$inputs$task_description), file.path(dir_inputs, "task_description.txt"), useBytes = TRUE)
+      writeLines(as.character(log$inputs$output_requirements), file.path(dir_inputs, "output_requirements.txt"), useBytes = TRUE)
+      
+      #prompt versionen
+      pv <- prompt_versions()
+      for (k in names(pv)) {
+        writeLines(as.character(pv[[k]]), file.path(dir_prompts, paste0("prompt_", k, ".txt")), useBytes = TRUE)
+      }
+      
+      #Events/history
+      jsonlite::write_json(log, file.path(dir_events, "events.json"),
+                           pretty = TRUE, auto_unbox = TRUE)
+      
+      #subsample runs/eval
+      sr <- subsample_runs()
+      if (length(sr) > 0) {
+        for (rk in names(sr)) {
+          df <- sr[[rk]]$df
+          write.csv(df, file.path(dir_subsample, paste0("subsample_", rk, ".csv")),
+                    row.names = FALSE, fileEncoding = "UTF-8")
+        }
+      }
+      
+      #batch resultate
+      br <- batch_runs()
+      if (length(br) > 0) {
+        for (rk in names(br)) {
+          df <- br[[rk]]$df
+          write.csv(df, file.path(dir_batch, paste0(rk, ".csv")),
+                    row.names = FALSE, fileEncoding = "UTF-8")
+        }
+      }
+      
+      #ZIP
+      old <- getwd()
+      setwd(root)
+      on.exit(setwd(old), add = TRUE)
+      
+      files_to_zip <- list.files(root, recursive = TRUE, full.names = FALSE)
+      utils::zip(zipfile = file, files = files_to_zip)
+    }
+  )
+  
   
   
 }

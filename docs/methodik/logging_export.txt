@@ -1,0 +1,62 @@
+Zeil: Workflow transparent & reproduzierbar machen. 
+--> Entscheidungsprozess nachvollziehbar machen, Prompt-Engineering dokumenieren, (versuchen) Transparenz zu reduzieren
+
+Was wird gespeichert?
+---------------------
+- ursprüngliche INputs (Codebook, Aufgabenbeschrieb, Output-Anforderungen)
+- alle Prompt-Versionen
+- vollst. History Prompt-Änderungen & Feedback auf denen es basiert
+- Subsample-Runs & Evaluation (Accuracy, Match, Reasoning)
+- finale Batch Klassifikation(en)
+- Modelleinstellungen (Modellname, Parameter, ..? evtl. System Prompts?)
+
+
+Initiale Inputs -> Prompt-Generierung -> Prompt-Optimierung (Feedback Zyklus) -> Subsample-Tests (Validierung) -> Full Batch Klassification -> Gesamtexport
+
+
+LOGGING: 
+--------
+
+1) Ursprüngliche Inputs: 
+<Codebook>
+<task_description>
+<output_requirements>
+=> ein Mal definiert/unverändert
+=> Logging: vollständiger Text, Zeitpukt?
+
+2) Prompt-Entwicklung: 
+
+2.1: Prompt-Generierung (Prompt v01)
+- Prompt-Version (v01)
+- vollstd. Prompt-Text
+(- Zeitpunkt?)
+
+2.2 Prompt-Optimierung
+prompt v01 -> + Feedback -> prompt v02 -> ...
+Für jede Prompt V speichern:
+- vorherige Prompt-V
+- Feedback (vollst. Text)
+- daraus generierte (neue) Prompt
+(- Zeitpunkt?)
+
+3) Subsample-Runs/Validierung
+- genutzte Prompt-V
+- Klassifikation, Verglech manuelle Codierung, Accuracy, Reasoning
+(- Zeitpunkt)
+- reasoning (eigentlich einfach wenn nötig, oder irgendwie kennzeichnen ob man aus dem Reasoining was hatte das problematisch war.....) hmmmmmmmm Lösung finden...........
+
+(4) Prompt-Auswahl; aber ist ja implizit, welche Prompt-V wurde für full Batch genutzt)
+
+5) Batch Klassifikation
+- verwendete Prompt-V
+- vollst. Klassifikationsergebnisse
+(- Zeitpunkt)
+
+6) Metadata
+- Modelldaten
+
+
+EXPORT: 
+-------
+
+

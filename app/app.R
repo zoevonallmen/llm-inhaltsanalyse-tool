@@ -3,7 +3,7 @@
 library(shiny) 
 library(shinythemes)
 library(here)
-library(jsonlite) #lad ich schon im classifier, reicht?
+library(jsonlite) #lade ich schon im classifier, reicht?
 
 ## LOAD KEY FUNCTIONS ----------------------------------------------------------
 source(here::here("R", "instructor.R"))
@@ -113,10 +113,10 @@ ui <- fluidPage(
       h4("Prompts anzeigen"),
       selectInput("prompt_to_view", "Prompt-Version anzeigen", choices = character(0)),
       verbatimTextOutput("prompt_view"),
-    
+      
       h4("Subsample übernommen"),
       tableOutput("subsample_table"),
-
+      
       h4("Subsample Evaluation"),
       selectInput("subsample_run_to_view", "Subsample-Run anzeigen", choices = character(0)),
       checkboxInput("show_only_mismatches", "Nur Fehlcodierungen anzeigen", value = FALSE),
@@ -713,7 +713,7 @@ server <- function(input, output, session) {
       run_key = current_batch_run_key(),
       prompt_key = prompt_key,
       n_docs = nrow(out),
-      n_success = sum(out$success),
+      n_success = sum(out$success)
     ))
     
   })
@@ -815,16 +815,19 @@ server <- function(input, output, session) {
     if (is.null(df)) return("Noch keine Klassifikation durchgeführt.")
     
     run_key <- current_batch_run_key()
+    runs <- batch_runs()
+    rk <- current_batch_run_key()
+    pv <- if (!is.null(rk) && rk %in% names(runs)) runs[[rk]]$prompt_version else "-"
     
     paste0(
       "Batch-Run: ", ifelse(is.null(run_key), "-", run_key), "\n",
       "Dokumente: ", nrow(df), "\n",
-      "Prompt-Version: ", unique(df$prompt_version), "\n",
+      "Prompt-Version: ", pv, "\n",
       "Erfolgreich: ", sum(df$success), "\n",
       "Export bereit."
     )
   })
-
+  
   
   #Export Randomsample
   output$download_subsample_template <- downloadHandler(
@@ -856,13 +859,51 @@ server <- function(input, output, session) {
       root <- tempfile("audit_")
       dir.create(root, recursive = TRUE)
       
+      dir_system    <- file.path(root, "00_system")
       dir_inputs    <- file.path(root, "01_inputs")
       dir_prompts   <- file.path(root, "02_prompts")
       dir_events    <- file.path(root, "03_events")
       dir_subsample <- file.path(root, "04_subsample_runs")
       dir_batch     <- file.path(root, "05_batch_runs")
-      dir.create(dir_inputs); dir.create(dir_prompts); dir.create(dir_events)
+      dir.create(dir_system); dir.create(dir_inputs); dir.create(dir_prompts); dir.create(dir_events)
       dir.create(dir_subsample); dir.create(dir_batch)
+      
+      #metadata
+      if (exists("SYSTEM_PROMPT_CLASSIFIER")) {
+        writeLines(SYSTEM_PROMPT_CLASSIFIER, file.path(dir_system, "system_prompt_classifier.txt"), useBytes = TRUE)
+      }
+      if (exists("SYSTEM_PROMPT_GENERATE")) {
+        writeLines(SYSTEM_PROMPT_GENERATE, file.path(dir_system, "system_prompt_instructor_generate.txt"), useBytes = TRUE)
+      }
+      if (exists("SYSTEM_PROMPT_OPTIMIZE")) {
+        writeLines(SYSTEM_PROMPT_OPTIMIZE, file.path(dir_system, "system_prompt_instructor_optimize.txt"), useBytes = TRUE)
+      }
+      
+      meta_export <- list(
+        exported_at = Sys.time(),
+        
+        classifier = list(
+          model = if (exists("CLASSIFIER_MODEL")) CLASSIFIER_MODEL else NA,
+          params = if (exists("CLASSIFIER_PARAMS")) CLASSIFIER_PARAMS else NA
+        ),
+        
+        instructor_generate = list(
+          model = if (exists("INSTRUCTOR_GENERATE_MODEL")) INSTRUCTOR_GENERATE_MODEL else NA,
+          params = if (exists("INSTRUCTOR_GENERATE_PARAMS")) INSTRUCTOR_GENERATE_PARAMS else NA
+        ),
+        
+        instructor_optimize = list(
+          model = if (exists("INSTRUCTOR_OPTIMIZE_MODEL")) INSTRUCTOR_OPTIMIZE_MODEL else NA,
+          params = if (exists("INSTRUCTOR_OPTIMIZE_PARAMS")) INSTRUCTOR_OPTIMIZE_PARAMS else NA
+        )
+      )
+      
+      jsonlite::write_json(
+        meta_export,
+        file.path(dir_system, "model_and_params.json"),
+        pretty = TRUE,
+        auto_unbox = TRUE
+      )
       
       #inputs
       writeLines(log$inputs$codebook, file.path(dir_inputs, "codebook.txt"), useBytes = TRUE)

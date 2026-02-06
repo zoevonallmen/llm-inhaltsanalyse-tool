@@ -93,3 +93,19 @@ hf_instructor_optimize <- ellmer::chat_huggingface(
     seed        = 12 
   )
 )
+
+
+# Für App Export: --------------------------------------------------------------
+
+INSTRUCTOR_GENERATE_MODEL <- LLAMA_MODEL
+INSTRUCTOR_GENERATE_PARAMS <- list(
+  temperature = 0.1,
+  max_tokens  = 1000
+)
+
+INSTRUCTOR_OPTIMIZE_MODEL <- LLAMA_MODEL
+INSTRUCTOR_OPTIMIZE_PARAMS <- list(
+  temperature = 0.1,
+  max_tokens  = 1000,
+  seed        = 12
+)

@@ -135,3 +135,12 @@ classifier <- function(article_text, prompt, chat_object = hf_model,
 }
 
 
+# Für App Export: --------------------------------------------------------------
+
+CLASSIFIER_MODEL <- LLAMA_MODEL
+CLASSIFIER_PARAMS <- list(
+  temperature = 0.0,
+  max_tokens  = 300,
+  seed        = 24
+)
+

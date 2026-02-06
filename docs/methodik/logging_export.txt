@@ -58,5 +58,36 @@ Für jede Prompt V speichern:
 
 EXPORT: 
 -------
+zip file?
 
+.zip
+|
+--inputs/
+|  |--codebook.txt
+|  |--task_description.txt
+|  |--output_requirements.txt
+|
+|--prompts/
+|  |--prompt_v1.txt
+|  |--prompt_v02.txt
+|  |--...
+|
+|--feedback/
+|  |--feedback_v02.txt
+|  |--feedback_v03.txt
+|  |--...
+|
+|--subsample_runs/
+|  |--run_01.csv
+|  |--run_02.csv
+|  |--...
+|
+|--batch_results/
+|  |--batch_01.csv
+|  |--batch_02.csv
+|  |--...
+|
+|--metadata/
+   |--model_?.json
+   |--timestamts_?.json
 

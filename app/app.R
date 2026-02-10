@@ -12,126 +12,151 @@ source(here::here("R", "classifier.R"))
 ## UI --------------------------------------------------------------------------
 
 ui <- fluidPage(
-  theme = shinytheme("cyborg"),
-  titlePanel("Inputs für Promptgenerierung"),
+  theme = shinytheme("cosmo"),
+  titlePanel(""),
   
   sidebarLayout(
     sidebarPanel(
       
-      # PROMPT INPUTS ----------------------------------------------------------
-      
-      fileInput(
-        "codebook_file",
-        "Codebuch hochladen",
-        accept = c(".txt", ".md")
-      ),
-      
-      textAreaInput(
-        "task_description",
-        "Aufgabenbeschrieb",
-        rows = 4,
-        placeholder = "Hier die Aufgabenbeschreibung eingeben..."
-      ),
-      
-      textAreaInput(
-        "output_requirements",
-        "Outputanforderung",
-        rows = 4,
-        placeholder = "JSON mit Feldern: code, reasoning"
-      ),
-      
-      actionButton("lock_inputs", "Inputs übernehmen"),
-      
-      actionButton("run_instructor_generate", "Prompt generieren"),
-      
-      tags$hr(),
-      
-      # PROMPT OPTIMIZATION ----------------------------------------------------
-      
-      textAreaInput(
-        "optimizer_feedback",
-        "Feedback für Optimierung",
-        rows = 4,
-        placeholder = "Hier Feedback für die Prompt-Optimierung eingeben..."
-      ),
-      
-      actionButton("run_instructor_optimize", "Prompt optimieren"),
-      
-      tags$hr(),
-      
-      # PROMPT SELECTION FOR CLASSIFIER ----------------------------------------
-      
-      selectInput(
-        "prompt_for_classifier",
-        "Prompt-Version für Klassifizierung auswählen",
-        choices = character(0)
+      # 1) INPUTS --------------------------------------------------------------
+      tags$details(
+        open = TRUE,
+        tags$summary(tags$b("1. Inputs")),
+        
+        fileInput("codebook_file", "Codebuch hochladen", accept = c(".txt", ".md")),
+        textAreaInput("task_description", "Aufgabenbeschrieb", rows = 3),
+        textAreaInput("output_requirements", "Outputanforderung", rows = 3),
+        actionButton("lock_inputs", "Inputs übernehmen"),
+        
+        tags$div(style="margin-top:8px; opacity:0.85;",
+                 tags$small(tags$b("Status: ")),
+                 textOutput("status_inputs_locked")
+        )
       ),
       
       tags$hr(),
       
-      # SUBSAMPLE --------------------------------------------------------------
-      
-      fileInput(
-        "subsample_file",
-        "Codiertes Subsample ('Goldstandard') hochladen (CSV: doc_id, content, manual_code)",
-        accept = c(".csv")
+      # 2) PROMPTS -------------------------------------------------------------
+      tags$details(
+        open = TRUE,
+        tags$summary(tags$b("2. Prompt-Entwicklung")),
+        
+        actionButton("run_instructor_generate", "Prompt generieren"),
+        
+        tags$hr(),
+        tags$b("Feedback für Optimierung"),
+        textAreaInput("optimizer_feedback", NULL, rows = 3,
+                      placeholder = "Feedback formulieren und dann 'Feedback übernehmen' klicken..."),
+        actionButton("lock_feedback", "Feedback übernehmen"),
+        actionButton("run_instructor_optimize", "Prompt optimieren"),
+        
+        tags$div(style="margin-top:8px; opacity:0.85;",
+                 tags$small(tags$b("Status: ")),
+                 textOutput("status_feedback_locked")
+        ),
+        
+        tags$hr(),
+        selectInput(
+          "prompt_for_classifier",
+          "Prompt-Version für Klassifizierung auswählen",
+          choices = character(0)
+        ),
+        tags$div(style="margin-top:8px; opacity:0.85;",
+                 tags$small(tags$b("Status: ")),
+                 textOutput("status_prompt_for_classifier")
+        )
       ),
-      
-      selectInput("subsample_id_col", "ID-Spalte", choices = character(0)),
-      selectInput("subsample_content_col", "Textspalte", choices = character(0)),
-      selectInput("subsample_manual_col", "Manuelle Codierung/Goldstandard", choices = character(0)),
-      
-      actionButton("lock_subsample", "Subsample übernehmen"),
-      actionButton("run_subsample_vitals", "Subsample testen (vitals)"),
       
       tags$hr(),
       
-      # BATCH ------------------------------------------------------------------
-      
-      fileInput(
-        "doc_files",
-        "Textinputs hochladen (CSV)",
-        accept = c(".csv") #sollten noch andere Formate erlaubt werden? 
+      # 3) SUBSAMPLE -----------------------------------------------------------
+      tags$details(
+        open = TRUE,
+        tags$summary(tags$b("3. Subsample")),
+        
+        fileInput("subsample_file", "Goldstandard-Subsample (CSV)", accept = c(".csv")),
+        selectInput("subsample_id_col", "ID-Spalte", choices = character(0)),
+        selectInput("subsample_content_col", "Textspalte", choices = character(0)),
+        selectInput("subsample_manual_col", "Manuelle Codierung", choices = character(0)),
+        
+        actionButton("lock_subsample", "Subsample übernehmen"),
+        actionButton("run_subsample_vitals", "Subsample testen"),
+        
+        tags$div(style="margin-top:8px; opacity:0.85;",
+                 tags$small(tags$b("Status: ")),
+                 textOutput("status_subsample_locked")
+        )
       ),
       
-      selectInput("batch_content_col", "Textspalte", choices = character(0)),
-      selectInput("batch_id_col", "ID-Spalte", choices = character(0)),
       tags$hr(),
       
-      numericInput("subsample_n", "Zufalls-Subsample (N)", value = 50, min = 1, step = 1),
-      actionButton("draw_subsample", "Subsample ziehen"),
-      downloadButton("download_subsample_template", "Subsample exportieren (CSV Template)"),
+      # 4) BATCH + SUBSAMPLE DRAW ---------------------------------------------
+      tags$details(
+        open = TRUE,
+        tags$summary(tags$b("4. Batch-Klassifikation & Sample ziehen ")),
+        
+        fileInput("doc_files", "Datensatz (CSV)", accept = c(".csv")),
+        selectInput("batch_content_col", "Textspalte", choices = character(0)),
+        selectInput("batch_id_col", "ID-Spalte", choices = character(0)),
+        
+        tags$hr(),
+        tags$b("Zufalls-Subsample ziehen"),
+        numericInput("subsample_n", "N", value = 50, min = 1, step = 1),
+        actionButton("draw_subsample", "Subsample ziehen"),
+        downloadButton("download_subsample_template", "Subsample exportieren (Template)"),
+        
+        tags$div(style="margin-top:8px; opacity:0.85;",
+                 tags$small(tags$b("Status: ")),
+                 textOutput("status_drawn_subsample")
+        ),
+        
+        tags$hr(),
+        actionButton("run_classifier", "Batch klassifizieren")
+      ),
       
-      actionButton("run_classifier", "Klassifizieren")
+      tags$hr(),
+      
+      # 5) EXPORT --------------------------------------------------------------
+      tags$details(
+        open = TRUE,
+        tags$summary(tags$b("5. Export / Audit Trail")),
+        downloadButton("download_audit_zip", "Audit Trail (ZIP)")
+      )
     ),
     
     mainPanel(
-      #evt. später raus?
-      h4("Prompt-Komponenten übernommen"),
-      verbatimTextOutput("active_inputs"),
-      
-      h4("Prompts anzeigen"),
-      selectInput("prompt_to_view", "Prompt-Version anzeigen", choices = character(0)),
-      verbatimTextOutput("prompt_view"),
-      
-      h4("Subsample übernommen"),
-      tableOutput("subsample_table"),
-      
-      h4("Subsample Evaluation"),
-      selectInput("subsample_run_to_view", "Subsample-Run anzeigen", choices = character(0)),
-      checkboxInput("show_only_mismatches", "Nur Fehlcodierungen anzeigen", value = FALSE),
-      verbatimTextOutput("eval_vitals_summary"),
-      tableOutput("eval_vitals_table"),
-      
-      h4("Klassifikation"),
-      verbatimTextOutput("classifier_output"),
-      
-      tags$hr(),
-      
-      downloadButton("download_audit_zip", "Audt Trail exportieren (ZIP)")
+      tabsetPanel(
+        tabPanel(
+          "Status",
+          h4("Inputs Preview"),
+          verbatimTextOutput("active_inputs"),
+          tags$hr(),
+          h4("Subsample Preview"),
+          tableOutput("subsample_table"),
+          h4("Batch-Status"),
+          verbatimTextOutput("classifier_output")
+        ),
+        
+        tabPanel(
+          "Prompts",
+          h4("Prompt auswählen"),
+          selectInput("prompt_to_view", "Prompt-Version anzeigen", choices = character(0)),
+          verbatimTextOutput("prompt_view")
+        ),
+        
+        tabPanel(
+          "Subsample",
+          h4("Evaluation"),
+          selectInput("subsample_run_to_view", "Subsample-Run anzeigen", choices = character(0)),
+          checkboxInput("show_only_mismatches", "Nur Fehlcodierungen anzeigen", value = FALSE),
+          verbatimTextOutput("eval_vitals_summary"),
+          tableOutput("eval_vitals_table")
+        )
+      )
     )
   )
 )
+
 
 ## SERVER ----------------------------------------------------------------------
 
@@ -149,6 +174,9 @@ server <- function(input, output, session) {
   prompt_versions <- reactiveVal(list())
   prompt_version_n <- reactiveVal(0)
   current_prompt_key <- reactiveVal(NULL)
+  
+  #Feedback
+  locked_feedback <- reactiveVal(NULL)
   
   #Subsample
   active_subsample <- reactiveVal(NULL)
@@ -436,13 +464,24 @@ server <- function(input, output, session) {
     
   })
   
+  #Feedback übernehmen
+  observeEvent(input$lock_feedback, {
+    fb <- input$optimizer_feedback
+    req(!is.null(fb))
+    fb <- trimws(fb)
+    req(nzchar(fb))
+    
+    locked_feedback(fb)
+  })
+  
   #Optimize Prompt 
   observeEvent(input$run_instructor_optimize, {
     comps <- prompt_components()
     req(comps)
     
-    feedback <- input$optimizer_feedback
-    req(nzchar(feedback))
+    feedback <- locked_feedback()
+    req(!is.null(feedback))
+    req(nzchar(trimws(feedback)))
     
     current_prompt <- get_current_prompt()
     optimizer_input <- build_optimizer_input_xml(current_prompt, comps, feedback)
@@ -450,7 +489,7 @@ server <- function(input, output, session) {
     add_log_event("prompt_events", list(
       type = "optimize_request",
       at = Sys.time(),
-      feedback = input$optimizer_feedback,
+      feedback = feedback,
       base_prompt_key = current_prompt_key()
     ))
     
@@ -466,6 +505,9 @@ server <- function(input, output, session) {
       at = Sys.time(),
       new_prompt_key = current_prompt_key()
     )) 
+    
+    locked_feedback(NULL)
+    updateTextAreaInput(session, "optimizer_feedback", value = "")
     
     
   })
@@ -844,6 +886,45 @@ server <- function(input, output, session) {
       write.csv(out, file, row.names = FALSE, fileEncoding = "UTF-8")
     }
   )
+  
+  #STATUS
+  # Status: Inputs übernommen?
+  output$status_inputs_locked <- renderText({
+    comps <- prompt_components()
+    if (is.null(comps)) "Noch nicht übernommen"
+    else "Inputs übernommen"
+  })
+  
+  # Status: Feedback übernommen?
+  output$status_feedback_locked <- renderText({
+    fb <- locked_feedback()
+    if (is.null(fb) || !nzchar(trimws(fb))) "Feedback noch nicht übernommen"
+    else "Feedback übernommen (bereit für Optimierung)"
+  })
+  
+  # Status: Subsample übernommen?
+  output$status_subsample_locked <- renderText({
+    df <- active_subsample()
+    if (is.null(df) || nrow(df) == 0) "Noch kein Subsample übernommen"
+    else paste0("Subsample übernommen (n = ", nrow(df), ")")
+  })
+  
+  # Status: Zufalls-Subsample gezogen?
+  output$status_drawn_subsample <- renderText({
+    df <- drawn_subsample()
+    if (is.null(df) || nrow(df) == 0) "Noch kein Subsample gezogen"
+    else paste0("Subsample gezogen (n = ", nrow(df), ") – Export möglich")
+  })
+  
+  #status output prompt for classify
+  output$status_prompt_for_classifier <- renderText({
+    v <- prompt_versions()
+    if (length(v) == 0) return("Noch keine Prompt-Version vorhanden (erst generieren).")
+    
+    sel <- input$prompt_for_classifier
+    if (is.null(sel) || !nzchar(sel)) "Keine Prompt-Version ausgewählt"
+    else paste0("Ausgewählt: ", sel)
+  })
   
   #EXPORT ZIP
   output$download_audit_zip <- downloadHandler(

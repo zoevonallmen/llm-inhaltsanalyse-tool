@@ -31,7 +31,7 @@ ui <- fluidPage(
         open = TRUE,
         tags$summary(tags$b("1. Inputs")),
 
-        fileInput("codebook_file", "Codebuch hochladen", accept = c(".txt", ".md")),
+        fileInput("codebook_file", "Codebuch hochladen (.txt, .md)", accept = c(".txt", ".md")),
         textAreaInput("task_description", "Aufgabenbeschrieb", rows = 3),
         textAreaInput("output_requirements", "Outputanforderung", rows = 3),
         actionButton("lock_inputs", "Inputs übernehmen"),
@@ -318,9 +318,16 @@ server <- function(input, output, session) {
   #CSV Batch - Spaltenauswahl
   batch_df <- reactive({
     req(input$doc_files)
-
     path <- input$doc_files$datapath
-    df <- read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
+    
+    header_line <- readLines(path, n = 1, encoding = "UTF-8", warn = FALSE)
+    sep_guess <- if (grepl(";", header_line) && !grepl(",", header_line)) ";" else ","
+    
+    df <- tryCatch(
+      read.csv(path, sep = sep_guess, stringsAsFactors = FALSE, check.names = FALSE, fileEncoding = "UTF-8"),
+      error = function(e) NULL
+    )
+    req(!is.null(df))
     req(nrow(df) > 0)
     df
   })
@@ -335,12 +342,10 @@ server <- function(input, output, session) {
     content_col <- input$batch_content_col
     id_col <- input$batch_id_col
 
-    if (!content_col %in% names(df)) {
-      stop("Gewählte Textspalte existiert nicht im Datensatz.")
-    }
-    if (!id_col %in% names(df)) {
-      stop("Gewählte ID-Spalte existiert nicht im Datensatz.")
-    }
+    validate(need(input$batch_content_col %in% names(df), 
+                  "Gewählte Textspalte existiert nicht im Datensatz."))
+    validate(need(input$batch_id_col %in% names(df), 
+                  "Gewählte ID-Spalte existiert nicht im Datensatz."))
 
     content <- as.character(df[[content_col]])
     keep <- !is.na(content) & nzchar(trimws(content))
@@ -380,9 +385,7 @@ server <- function(input, output, session) {
 
     names(df) <- trimws(names(df))
 
-    if (ncol(df) == 1) {
-      stop("Subsample-CSV wurde als 1 Spalte eingelesen.")
-    }
+    validate(need(ncol(df) > 1, "Subsample-CSV wurde als 1 Spalte eingelesen."))
 
     df
   })
@@ -399,10 +402,10 @@ server <- function(input, output, session) {
     content_col <- input$subsample_content_col
     manual_col <- input$subsample_manual_col
 
-    if (!id_col %in% names(df)) stop("Gewählte ID-Spalte existiert nicht im Subsample.")
-    if (!content_col %in% names(df)) stop("Gewählte Textspalte existiert nicht im Subsample.")
-    if (!manual_col %in% names(df)) stop("Gewählte Spalte 'manuelle Codierung' existiert nicht im Subsample.")
-
+    validate(need(id_col %in% names(df), "Gewählte ID-Spalte existiert nicht im Subsample."))
+    validate(need(content_col %in% names(df), "Gewählte Textspalte existiert nicht im Subsample."))
+    validate(need(manual_col %in% names(df), "Gewählte Spalte 'manuelle Codierung' existiert nicht im Subsample."))
+    
     df$doc_id <- as.character(df[[id_col]])
     df$content <- as.character(df[[content_col]])
     df$manual_code <- as.character(df[[manual_col]])
@@ -548,17 +551,26 @@ server <- function(input, output, session) {
 
   #Random Sample ziehen
   observeEvent(input$draw_subsample, {
-
-    df <- docs_list()
+    df <- tryCatch(
+      docs_list(),
+      error = function(e) NULL
+    )
+    
+    if (is.null(df)) {
+      showNotification("Fehler beim Laden des Datensatzes – Spalten prüfen.", 
+                       type = "error", duration = 5)
+      return()
+    }
+    
     req(nrow(df) > 0)
     req(input$subsample_n)
-
+    
     n_total <- nrow(df)
     n_take <- min(as.integer(input$subsample_n), n_total)
-
+    
     set.seed(24)
     idx <- sample(seq_len(n_total), size = n_take, replace = FALSE)
-
+    
     drawn_subsample(df[idx, c("doc_id", "content")])
   })
 
@@ -578,11 +590,21 @@ server <- function(input, output, session) {
 
   #Übernehmen Subsample
   observeEvent(input$lock_subsample, {
-    df <- subsample_data()
-    req(df)
+    df <- tryCatch(
+      subsample_data(),
+      error = function(e) NULL
+    )
+    
+    if (is.null(df)) {
+      showNotification("Fehler beim Laden des Subsamples – Spalten prüfen.", 
+                       type = "error", duration = 5)
+      return()
+    }
+    
     active_subsample(df)
   })
-
+  
+  
   #Dropdown für subsample_run_view
   observe({
     runs <- subsample_runs()
@@ -703,7 +725,17 @@ server <- function(input, output, session) {
     prompt_text <- versions[[prompt_key]]
     req(prompt_text)
 
-    docs <- docs_list()
+    docs <- tryCatch(
+      docs_list(),
+      error = function(e) NULL
+    )
+    
+    if (is.null(docs)) {
+      showNotification("Fehler beim Laden des Datensatzes – Spalten prüfen.", 
+                       type = "error", duration = 5)
+      return()
+    }
+    
     req(nrow(docs) > 0)
 
     withProgress(message = "Batch-Klassifikation läuft...", value = 0, {
@@ -944,9 +976,19 @@ server <- function(input, output, session) {
     content = function(file) {
 
       log <- process_log()
-      req(!is.null(log$inputs))
-      req(length(prompt_versions()) > 0)
-
+      
+      if (is.null(log$inputs)) {
+        showNotification("Inputs fehlen – zuerst Inputs übernehmen.", 
+                         type = "error", duration = 5)
+        return(NULL)
+      }
+      
+      if (length(prompt_versions()) == 0) {
+        showNotification("Keine Prompt-Version vorhanden.", 
+                         type = "error", duration = 5)
+        return(NULL)
+      }
+      
       root <- tempfile("audit_")
       dir.create(root, recursive = TRUE)
 

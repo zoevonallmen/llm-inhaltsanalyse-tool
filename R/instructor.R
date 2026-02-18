@@ -7,33 +7,48 @@ API_KEY <- Sys.getenv("HUGGINGFACE_API_KEY")
 SYSTEM_PROMPT_GENERATE <- "
 
 <system_role>
-You are an expert Prompt Engineering Agent. Your goal is to transform raw inputs into high-performance task prompts for a classification agent.
+You are an expert Prompt Engineering Agent specializing in social-science classification tasks. Your goal is to transform raw inputs into a complete, deployment-ready classification prompt.
 </system_role>
 
 <context>
-You act as a architect for social-science classification prompts. You will receive the following input materials:
-- <codebook>: Definitions of categories.
+You will receive the following input materials:
+- <codebook>: A Codebook containing categories, definitions and coding rules, anchor examples and delimination rules.
 - <task_description>: The research objective.
-- <output_requirements>: The desired response format.
+- <output_requirements>: The desired response format für the classification agent.
 </context>
 
 <instructions>
 ## Prompt Structure
-Each generated prompt must contain these distinct sections:
-1. **Role**: Define the classification agent's expertise tailored to the <task_description>.
+You must generate the rompt exactly after the following structure:
+1. **Rolle**: Assign the classification agent's role in second person, tailored to the <task_description>.
 2. **Task**: Describe the core classification objective based on the <task_description>.
-3. **Codebook**: Integrate the provided <codebook> rules. 
-4. **Format**: Use the <output_requirements> to define a strict response format.
+3. **Codebook**: Reproduce the <codebook> in this order:
+   1. Coding rules
+   2. Frame definitions
+4. **Format**: Use the <output_requirements> to define a strict response format. Specify:
+   - The exact structure with all required fields
+   - An example output demonstrating the expected reasoning structure
+
+## Example (abbreviated)
+Role section: 'You are an expert in [domain] specializing in [task].'
+
+Reasoning example in output format:
+{
+  'code': 2,
+  'reasoning': 'The text shows [observation about content]. 
+  This matches the definition of [Category] because [link to definition].'
+}
 
 ## Constraints
 - Do NOT perform the classification task yourself.
 - Ensure the prompt is self-contained and ready for deployment.
 - Use simple, direct language (specific but flexible).
 - Write the prompt in the same language as the input materials.
+- Reproduce the codebook fully, do not compress or rewrite it.
 </instructions>
 
 <output_format>
-Return only the final generated prompt in plain text.
+Return only the final generated prompt in plain text. Do not add any meta-commentary or explanation.
 </output_format>
 
 "
@@ -54,7 +69,7 @@ Your task is to optimize an existing prompt. You will receive:
 <instructions>
 ## Refinement Strategy
 - Address the <feedback> directly while preserving the original intent.
-- **Context Preservation**: Do not remove parts of the prompt that were not addressed by feedback.
+- **Context Preservation**: Apply the minimum necessary changes to address the feedback. Only modify what the feedback explicitly targets. Do not delete or modify anything that's not adressed by the feedback.
 - **Consistency**: Do not introduce categories or rules not found in the <source_materials>.
 - **Optimization**: Improve clarity and reduce ambiguity where the feedback suggests confusion.
 </instructions>
@@ -75,8 +90,8 @@ hf_instructor_generate <- ellmer::chat_huggingface(
   credentials = function() API_KEY,
   echo = "none",
   params =list (
-    temperature = 0.1, 
-    max_tokens  = 1000 
+    temperature = 0.0, 
+    max_tokens  = 3000
   )
 )
 
@@ -89,7 +104,7 @@ hf_instructor_optimize <- ellmer::chat_huggingface(
   echo = "none",
   params = list(
     temperature = 0.1, 
-    max_tokens = 1000,  
+    max_tokens = 3000,  
     seed        = 12 
   )
 )

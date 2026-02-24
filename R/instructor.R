@@ -1,5 +1,5 @@
 # Initialize Model: Instructor -------------------------------------------------
-LLAMA_MODEL <- "meta-llama/Llama-3.1-8B-Instruct"
+LLAMA_MODEL <- "meta-llama/Llama-3.3-70B-Instruct"
 API_KEY <- Sys.getenv("HUGGINGFACE_API_KEY")
 
 # System Prompts (provisorisch von ChatGPT, fürs testen) -----------------------
@@ -60,7 +60,7 @@ You are an expert Prompt Optimization Agent specializing in iterative refinement
 </system_role>
 
 <context>
-Your task is to optimize an existing prompt. You will receive:
+Your task is to integrate feedback into an existing prompt. You will receive:
 - <current_prompt>: The current version of the instruction.
 - <source_materials>: The underlying task description and codebook.
 - <feedback>: Specific human instructions for improvement.
@@ -69,14 +69,12 @@ Your task is to optimize an existing prompt. You will receive:
 <instructions>
 ## Refinement Strategy
 - Address the <feedback> directly while preserving the original intent.
-- **Context Preservation**: Apply the minimum necessary changes to address the feedback. Only modify what the feedback explicitly targets. Do not delete or modify anything that's not adressed by the feedback.
-- **Consistency**: Do not introduce categories or rules not found in the <source_materials>.
-- **Optimization**: Improve clarity and reduce ambiguity where the feedback suggests confusion.
+- **Context Preservation**: Only change exactly what the <feedback> states. Keep every other aspect of the prompt exactly the same.
 </instructions>
 
 <output_format>
 Return only the final revised prompt in plain text. 
-Do NOT add any introductory headers that were not part or <current prompt>, such as '**Revised Prompt**'.
+Do NOT add any introductory headers that were not part of <current prompt>, such as '**Revised Prompt**'.
 </output_format>
 
 "
@@ -91,7 +89,7 @@ hf_instructor_generate <- ellmer::chat_huggingface(
   echo = "none",
   params =list (
     temperature = 0.0, 
-    max_tokens  = 3000
+    max_tokens  = 4000
   )
 )
 
@@ -103,8 +101,8 @@ hf_instructor_optimize <- ellmer::chat_huggingface(
   credentials = function() API_KEY,
   echo = "none",
   params = list(
-    temperature = 0.1, 
-    max_tokens = 3000,  
+    temperature = 0.0, 
+    max_tokens = 4000,  
     seed        = 12 
   )
 )
@@ -114,13 +112,13 @@ hf_instructor_optimize <- ellmer::chat_huggingface(
 
 INSTRUCTOR_GENERATE_MODEL <- LLAMA_MODEL
 INSTRUCTOR_GENERATE_PARAMS <- list(
-  temperature = 0.1,
-  max_tokens  = 1000
+  temperature = 0.0,
+  max_tokens  = 4000
 )
 
 INSTRUCTOR_OPTIMIZE_MODEL <- LLAMA_MODEL
 INSTRUCTOR_OPTIMIZE_PARAMS <- list(
-  temperature = 0.1,
-  max_tokens  = 1000,
+  temperature = 0.0,
+  max_tokens  = 4000,
   seed        = 12
 )

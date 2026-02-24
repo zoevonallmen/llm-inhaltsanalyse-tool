@@ -4,7 +4,7 @@ library(jsonlite)
 library(stringr)
 
 # Initialize Model -------------------------------------------------------------
-LLAMA_MODEL <- "meta-llama/Llama-3.1-8B-Instruct"
+LLAMA_MODEL <- "meta-llama/Llama-3.3-70B-Instruct"
 API_KEY <- Sys.getenv("HUGGINGFACE_API_KEY")
 
 SYSTEM_PROMPT_CLASSIFIER <- "

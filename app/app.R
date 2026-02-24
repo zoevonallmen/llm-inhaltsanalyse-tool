@@ -1,9 +1,10 @@
 
 ## LIBRARIES -------------------------------------------------------------------
+library(jsonlite)
 library(shiny)
 library(shinythemes)
 library(here)
-library(jsonlite) #lade ich schon im classifier, reicht?
+#lade ich schon im classifier, reicht?
 # Dann würde es theoretisch reichen, wenn es aber wichtig für diesen Code ist, können
 # Sie es ruhig auch hier laden. Das macht im Grunde keinen Unterschied. Sofern Sie
 # alle Pakete immer zuerst laden, was Sie anscheinend im Sinne einer good practice tun -- super!
@@ -61,6 +62,17 @@ ui <- fluidPage(
         tags$div(style="margin-top:8px; opacity:0.85;",
                  tags$small(tags$b("Status: ")),
                  textOutput("status_feedback_locked")
+        ),
+        
+        tags$hr(),
+        tags$b("Begründung für Prompt-Änderung (nur für Dokumentation)"),
+        textAreaInput("optimizer_rationale", NULL, rows = 2,
+                      placeholder = "Warum wird der Prompt geändert? (wird nicht an LLM übergeben)"),
+        actionButton("lock_rationale", "Begründung speichern"),
+        
+        tags$div(style="margin-top:8px; opacity:0.85;",
+                 tags$small(tags$b("Status: ")),
+                 textOutput("status_rationale_locked")
         ),
 
         tags$hr(),
@@ -149,7 +161,8 @@ ui <- fluidPage(
           "Prompts",
           h4("Prompt auswählen"),
           selectInput("prompt_to_view", "Prompt-Version anzeigen", choices = character(0)),
-          verbatimTextOutput("prompt_view")
+          verbatimTextOutput("prompt_view") |> 
+            tagAppendAttributes(style = "max-height:600px; overflow-y:auto;")
         ),
 
         tabPanel(
@@ -187,6 +200,9 @@ server <- function(input, output, session) {
 
   #Feedback
   locked_feedback <- reactiveVal(NULL)
+  
+  #Begründung für Feedback
+  locked_rationale <- reactiveVal(NULL)
 
   #Subsample
   active_subsample <- reactiveVal(NULL)
@@ -342,10 +358,8 @@ server <- function(input, output, session) {
     content_col <- input$batch_content_col
     id_col <- input$batch_id_col
 
-    validate(need(input$batch_content_col %in% names(df), 
-                  "Gewählte Textspalte existiert nicht im Datensatz."))
-    validate(need(input$batch_id_col %in% names(df), 
-                  "Gewählte ID-Spalte existiert nicht im Datensatz."))
+    req(content_col %in% names(df))
+    req(id_col %in% names(df))
 
     content <- as.character(df[[content_col]])
     keep <- !is.na(content) & nzchar(trimws(content))
@@ -385,7 +399,7 @@ server <- function(input, output, session) {
 
     names(df) <- trimws(names(df))
 
-    validate(need(ncol(df) > 1, "Subsample-CSV wurde als 1 Spalte eingelesen."))
+    req(ncol(df) > 1) 
 
     df
   })
@@ -402,9 +416,9 @@ server <- function(input, output, session) {
     content_col <- input$subsample_content_col
     manual_col <- input$subsample_manual_col
 
-    validate(need(id_col %in% names(df), "Gewählte ID-Spalte existiert nicht im Subsample."))
-    validate(need(content_col %in% names(df), "Gewählte Textspalte existiert nicht im Subsample."))
-    validate(need(manual_col %in% names(df), "Gewählte Spalte 'manuelle Codierung' existiert nicht im Subsample."))
+    req(id_col %in% names(df))     
+    req(content_col %in% names(df)) 
+    req(manual_col %in% names(df))  
     
     df$doc_id <- as.character(df[[id_col]])
     df$content <- as.character(df[[content_col]])
@@ -485,6 +499,13 @@ server <- function(input, output, session) {
 
     locked_feedback(fb)
   })
+  
+  #Begründung speichern
+  observeEvent(input$lock_rationale, {
+    r <- trimws(input$optimizer_rationale)
+    req(nzchar(r))
+    locked_rationale(r)
+  })
 
   #Optimize Prompt
   observeEvent(input$run_instructor_optimize, {
@@ -502,11 +523,20 @@ server <- function(input, output, session) {
       type = "optimize_request",
       at = Sys.time(),
       feedback = feedback,
+      rationale = locked_rationale(),
       base_prompt_key = current_prompt_key()
     ))
 
+    hf_instructor_optimize_new <- ellmer::chat_huggingface(
+      model = INSTRUCTOR_OPTIMIZE_MODEL,
+      system_prompt = SYSTEM_PROMPT_OPTIMIZE,
+      credentials = function() API_KEY,
+      echo = "none",
+      params = INSTRUCTOR_OPTIMIZE_PARAMS
+    )
+    
     optimized_prompt <- tryCatch(
-      hf_instructor_optimize$chat(optimizer_input, echo = "none"),
+      hf_instructor_optimize_new$chat(optimizer_input, echo = "none"),
       error = function(e) paste("ERROR", e$message)
     )
 
@@ -520,6 +550,9 @@ server <- function(input, output, session) {
 
     locked_feedback(NULL)
     updateTextAreaInput(session, "optimizer_feedback", value = "")
+    
+    locked_rationale(NULL)
+    updateTextAreaInput(session, "optimizer_rationale", value = "")
 
   })
 
@@ -576,7 +609,17 @@ server <- function(input, output, session) {
 
   #Dropdowns mit Spaltennamen befüllen Subsample
   observeEvent(subsample_df(), {
-    df <- subsample_df()
+    df <- tryCatch(
+      subsample_df(),
+      error = function(e) NULL
+    )
+    
+    if (is.null(df)) {
+      showNotification("Subsample-CSV konnte nicht gelesen werden – Trennzeichen prüfen.", 
+                       type = "error", duration = 5)
+      return()
+    }
+    
     cols <- names(df)
 
     default_id <- if ("doc_id" %in% cols) "doc_id" else cols[1]
@@ -699,7 +742,17 @@ server <- function(input, output, session) {
 
   #Dropdowns mit Spaltennamen befüllen Batch
   observeEvent(batch_df(), {
-    df <- batch_df()
+    df <- tryCatch(
+      batch_df(),
+      error = function(e) NULL
+    )
+    
+    if (is.null(df)) {
+      showNotification("Batch-CSV konnte nicht gelesen werden – Trennzeichen prüfen.", 
+                       type = "error", duration = 5)
+      return()
+    }
+    
     cols <- names(df)
 
     default_content <- if ("content" %in% cols) "content" else cols[1]
@@ -942,6 +995,13 @@ server <- function(input, output, session) {
     fb <- locked_feedback()
     if (is.null(fb) || !nzchar(trimws(fb))) "Feedback noch nicht übernommen"
     else "Feedback übernommen (bereit für Optimierung)"
+  })
+  
+  #Status: Begründung gespeichert?
+  output$status_rationale_locked <- renderText({
+    r <- locked_rationale()
+    if (is.null(r) || !nzchar(trimws(r))) "Begründung noch nicht gespeichert"
+    else "Begründung gespeichert"
   })
 
   # Status: Subsample übernommen?

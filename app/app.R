@@ -147,19 +147,21 @@ ui <- fluidPage(
     mainPanel(
       tabsetPanel(
         tabPanel(
-          "Status",
+          "Status und Preview",
           h4("Inputs Preview"),
           verbatimTextOutput("active_inputs"),
           tags$hr(),
-          h4("Subsample Preview"),
+          h4("Testsample-Datensatz Preview"),
           tableOutput("subsample_table"),
+          h4("Batch-Datensatz Preview"),
+          tableOutput("batch_input_preview"),
           h4("Batch-Status"),
-          verbatimTextOutput("classifier_output")
+          verbatimTextOutput("classifier_output"),
         ),
 
         tabPanel(
           "Prompts",
-          h4("Prompt auswählen"),
+          h4("Prompts"),
           selectInput("prompt_to_view", "Prompt-Version anzeigen", choices = character(0)),
           verbatimTextOutput("prompt_view") |> 
             tagAppendAttributes(style = "max-height:600px; overflow-y:auto;")
@@ -727,6 +729,7 @@ server <- function(input, output, session) {
     out <- do.call(rbind, out_list)
 
     acc <- mean(out$match, na.rm = TRUE)# Accuracy selbst berechnen (nur gültige Vergleiche zählen)
+    n_success <- sum(!is.na(out$pred_code))
 
     save_new_subsample_run(out, prompt_key, acc)
 
@@ -735,6 +738,7 @@ server <- function(input, output, session) {
       run_key = current_subsample_run_key(),
       prompt_key = prompt_key,
       n_docs = nrow(out),
+      n_success = n_success,
       accuracy = acc
     ))
 
@@ -828,11 +832,9 @@ server <- function(input, output, session) {
 
         data.frame(
           doc_id = doc_id,
-          #prompt_version = prompt_key, --> kann man thoer. rausnehmen, weil ist im audit (events.json)
           success = isTRUE(res$success),
           code = if (is.null(res$code)) NA else as.character(res$code),
-          #reasoning = if (is.null(res$reasoning)) NA else as.character(res$reasoning), -> evtl auch raus, könnte zu viel werden, bei grossen textmengen. ausser noch nachträglich validieren?
-          #latency_s = as.numeric(difftime(end_time, start_time, units = "secs")), -> is des nötig?
+          reasoning = if (is.null(res$reasoning)) NA else as.character(res$reasoning),
           stringsAsFactors = FALSE
         )
       })
@@ -854,9 +856,7 @@ server <- function(input, output, session) {
 
   # OUTPUTS --------------------------------------------------------------------
 
-  # Anzeige übernommene Inputs für User ==> kann dann evl später auch weg?
-  # Oder Sie machen es optional.
-
+  # Anzeige übernommene Inputs für User 
   output$active_inputs <- renderText({
     comps <- prompt_components()
     if(is.null(comps)) return("Noch keine Inputs übernommen.")
@@ -871,7 +871,7 @@ server <- function(input, output, session) {
   #Prompt anzeigen für gewälte Version
   output$prompt_view <- renderText({
     versions <- prompt_versions()
-    req(length(versions) > 0)
+    if (length(versions) == 0) return("Noch kein Prompt generiert.")
 
     key <- input$prompt_to_view
     req(key)
@@ -885,13 +885,11 @@ server <- function(input, output, session) {
     )
   })
 
-  # Anzeige uploaded Subsample (kann raus?)
-  # Wie gesgat, eventuell könnten Sie es auch als Opion im Sinne der Transparenz anbieten.
-  # Anonsten ist es natürlich kein Muss und kann raus.
+  # Anzeige uploaded Subsample 
   output$subsample_table <- renderTable({
     df <- active_subsample()
-    if (is.null(df)) return(NULL)
-    head(df, 50)
+    if (is.null(df)) return(data.frame(Status = "Noch kein Subsample übernommen."))
+    head(df, 3)
   })
 
   # Anzeigen Output Summary für Subsample
@@ -906,11 +904,14 @@ server <- function(input, output, session) {
     run <- runs[[key]]
     df <- run$df
     req(!is.null(df))
+    
+    n_success <- sum(!is.na(df$pred_code))
 
     paste0(
       "Run: ", key, "\n",
       "Prompt-Version: ", run$prompt_version, "\n",
       "Textdocs: ", nrow(df), "\n",
+      "Erfolgreich klassifiziert: ", n_success, "\n",
       "Accuracy: ", round(as.numeric(run$accuracy), 3), "\n",
       "Fehlerhafte Codierungen: ", sum(df$match == FALSE, na.rm = TRUE)
     )
@@ -955,12 +956,16 @@ server <- function(input, output, session) {
     runs <- batch_runs()
     rk <- current_batch_run_key()
     pv <- if (!is.null(rk) && rk %in% names(runs)) runs[[rk]]$prompt_version else "-"
+    
+    n_success <- sum(!is.na(df$code)) 
+    n_na <- sum(is.na(df$code))        
 
     paste0(
       "Batch-Run: ", ifelse(is.null(run_key), "-", run_key), "\n",
-      "Dokumente: ", nrow(df), "\n",
       "Prompt-Version: ", pv, "\n",
-      "Erfolgreich: ", sum(df$success), "\n",
+      "Dokumente total: ", nrow(df), "\n",
+      "Erfolgreich klassifiziert: ", n_success, "\n",
+      "Nicht klassifiziert (NA): ", n_na, "\n",
       "Export bereit."
     )
   })
@@ -981,6 +986,13 @@ server <- function(input, output, session) {
       write.csv(out, file, row.names = FALSE, fileEncoding = "UTF-8")
     }
   )
+  
+  #Anzeige Preview uploaded CSV for Batch
+  output$batch_input_preview <- renderTable({
+    df <- tryCatch(docs_list(), error = function(e) NULL)
+    if (is.null(df)) return(data.frame(Status = "Noch kein Datensatz geladen."))
+    head(df, 3)
+  })
 
   # STATUS
   # Status: Inputs übernommen?

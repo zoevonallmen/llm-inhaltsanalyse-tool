@@ -43,7 +43,7 @@ Reasoning example in output format:
 - Do NOT perform the classification task yourself.
 - Ensure the prompt is self-contained and ready for deployment.
 - Use simple, direct language (specific but flexible).
-- Write the prompt in the same language as the input materials.
+- The generated prompt must be written entirely in the same language as the <task_description> input. Do not mix languages.
 - Reproduce the codebook fully, do not compress or rewrite it.
 </instructions>
 

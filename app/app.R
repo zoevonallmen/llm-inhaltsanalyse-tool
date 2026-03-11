@@ -16,8 +16,6 @@ library(here)
 source(here::here("R", "instructor.R"))
 source(here::here("R", "classifier.R"))
 
-# Toll, dass Sie here nutzen ;-)
-
 ## UI --------------------------------------------------------------------------
 
 ui <- fluidPage(
@@ -179,8 +177,6 @@ ui <- fluidPage(
     )
   )
 )
-
-# Ich fine, die UI sieht gut aus.
 
 
 ## SERVER ----------------------------------------------------------------------
@@ -1120,7 +1116,6 @@ server <- function(input, output, session) {
       for (k in names(pv)) {
         writeLines(as.character(pv[[k]]), file.path(dir_prompts, paste0("prompt_", k, ".txt")), useBytes = TRUE)
       }
-      # Die Schleife könnte man im Sinne der Performance optimieren, muss aber nicht sein.
 
       #Events/history
       jsonlite::write_json(log, file.path(dir_events, "events.json"),
@@ -1160,5 +1155,3 @@ server <- function(input, output, session) {
 
 
 shinyApp(ui = ui, server = server)
-
-# Eine tolle App!

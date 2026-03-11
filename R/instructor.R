@@ -10,6 +10,10 @@ SYSTEM_PROMPT_GENERATE <- "
 You are an expert Prompt Engineering Agent specializing in social-science classification tasks. Your goal is to transform raw inputs into a complete, deployment-ready classification prompt.
 </system_role>
 
+<task>
+Your task is to generate a prompt that instructs a classification agent to apply the codebook reliably to new text inputs.
+</task>
+
 <context>
 You will receive the following input materials:
 - <codebook>: A Codebook containing categories, definitions and coding rules, anchor examples and delimination rules.
@@ -19,32 +23,30 @@ You will receive the following input materials:
 
 <instructions>
 ## Prompt Structure
-You must generate the rompt exactly after the following structure:
-1. **Rolle**: Assign the classification agent's role in second person, tailored to the <task_description>.
+Generate the prompt using the following structure. The sections must appear clearly separated using headers such as '# Role', '# Task', '# Codebook', and '# Output Format'.
+1. **Rolle**: Assign the classification agent a clear role in second person, tailored to the <task_description>.
+   Example: 'You are an expert in [domain] specializing in [task].'
 2. **Task**: Describe the core classification objective based on the <task_description>.
-3. **Codebook**: Reproduce the <codebook> in this order:
-   1. Coding rules
-   2. Frame definitions
+3. **Codebook**: Integrate the into the prompt while preserving all definitions, rules, and examples. Do not change the meaning of any category, rule, or definition.
 4. **Format**: Use the <output_requirements> to define a strict response format. Specify:
    - The exact structure with all required fields
-   - An example output demonstrating the expected reasoning structure
+   - That the reasoning must explain the classification step-by-step by linking textual evidence to the relevant codebook definition.
+   
+   Include a short example output demonstrating the reasoning srtcuture. 
+   Example:
 
-## Example (abbreviated)
-Role section: 'You are an expert in [domain] specializing in [task].'
-
-Reasoning example in output format:
-{
-  'code': 2,
-  'reasoning': 'The text shows [observation about content]. 
-  This matches the definition of [Category] because [link to definition].'
-}
+   Reasoning example in output format:
+   {
+     'code': 2,
+     'reasoning': 'The text mentions [observation about content]. 
+     This matches the definition of [Category] because [link to definition].'
+   }
 
 ## Constraints
 - Do NOT perform the classification task yourself.
 - Ensure the prompt is self-contained and ready for deployment.
 - Use simple, direct language (specific but flexible).
 - The generated prompt must be written entirely in the same language as the <task_description> input. Do not mix languages.
-- Reproduce the codebook fully, do not compress or rewrite it.
 </instructions>
 
 <output_format>
@@ -59,17 +61,23 @@ SYSTEM_PROMPT_OPTIMIZE <- "
 You are an expert Prompt Optimization Agent specializing in iterative refinement.
 </system_role>
 
+<task>
+Your task is to optimize the <current_prompt> by integrating the provided <feedback>.
+</task>
+
 <context>
-Your task is to integrate feedback into an existing prompt. You will receive:
+You will receive:
 - <current_prompt>: The current version of the instruction.
 - <source_materials>: The underlying task description and codebook.
 - <feedback>: Specific human instructions for improvement.
 </context>
 
 <instructions>
-## Refinement Strategy
-- Address the <feedback> directly while preserving the original intent.
-- **Context Preservation**: Only change exactly what the <feedback> states. Keep every other aspect of the prompt exactly the same.
+- Modify only the parts of the prompt necessary to implement the .
+- Preserve the original intent and functionality of the <current_prompt>.
+- Keep all unrelated sections exactly the same.
+- Maintain the original structure, section headers, and formatting of the prompt.
+- Prefer small edits, insertions, or replacements rather than rewriting entire sections.
 </instructions>
 
 <output_format>

@@ -1,0 +1,125 @@
+{
+  "meta": {
+    "created_at": "2026-03-11 08:59:07"
+  },
+  "inputs": {
+    "saved_at": "2026-03-11 09:00:07",
+    "codebook": "Codebook: Framing-Analyse Schweizer Medienberichterstattung zu Migration\n\n\nAllgemeine Codierregeln:\n\n-Definition «Frame»: Mit Frame ist die übergreifende Perspektive oder Rahmung, durch die ein Artikel das Thema Migration oder MigrantInnen selbst darstellt, gemeint. Der Frame zeigt sich durch die Auswahl von Argumenten und Akteuren, die Betonung bestimmter Aspekte und die implizite oder explizite Bewertung von Migration.\n\n-Dominanter Frame: Codiere den Frame, den der Artikel als Narrativ übernimmt. Wenn der Artikel rein deskriptiv oder analytisch ist, oder zwei Frames gleich stark aufgreift, codiere \"0\" - kein passender Frame.\n\n-Bei Unsicherheit: Wenn kein Frame eindeutig zutrifft: codiere «0» - kein passender Frame\n\n-Umgang mit Mehrfachframes: Wenn ein Artikel zwei Frames gleich stark betont, codiere \"0\" - kein passender Frame \n\n-Artikelstimme vs. zitierte Positionen: Es soll explizit die Perspektive des Artikels codiert werden, nicht nur zitierte Akteure.\n\n \nFrame-Definitionen:\n\n1. Wirtschaftliche Bedrohung\n\nDefinition: Migration wird als Belastung für die Wirtschaft, den Arbeitsmarkt oder den Wohlfahrtsstaat dargestellt. Der Frame betont negative ökonomische Folgen von Migration, wie Kosten, Konkurrenzen oder Überlastung sozialer Systeme.\nTypische Argumente:\n-Migration führt zu höheren Kosten (Sozialausgaben, Gesundheitssystem, Bildung)\n-Migranten konkurrieren mit Einheimischen um Arbeitsplätze, Verdrängung durch billigere Arbeitskräfte\n-Migration als Belastung für die Schweizer Wirtschaft, Überlastung des Wohlfahrtsstaats\nAnkerbeispiel: \"Die Masseneinwanderung kostet Milliarden: Sozialausgaben steigen, während Schweizer Arbeitnehmer unter Lohndruck geraten.\"\nAbgrenzung:\n-NICHT Wirtschaftliche Bedrohung: Wenn ökonomische Aspekte neutral oder positiv dargestellt werden -> \"Wirtschaftlicher Nutzen\" oder \"kein \tpassender Frame\"\n-NICHT Wirtschaftliche Bedrohung: Wenn der Artikel ökonomische Vor- und Nachteile gleichwertig darstellt -> \"0 – kein passender Frame\"\n\n2. Wirtschaftlicher Nutzen\n\nDefinition: Migration wird als wirtschaftlich vorteilhaft oder notwendig dargestellt. Der Frame betont positive ökonomische Folgen von Migration für Wirtschaftswachstum, Fachkräfte oder Innovation.\nTypische Argumente:\n-Migranten füllen Lücken auf dem Arbeitsmarkt\n-Fachkräftemangel wird durch Einwanderung gelindert\n-Migration fördert Wirtschaftswachstum und Innovation\nAnkerbeispiel: \"Die Schweizer Wirtschaft braucht Fachkräfte aus dem Ausland\"\nAbgrenzung:\n-NICH Wirtschaftlicher Nutzen: Wenn ökonomische Aspekte negativ dargestellt werden -> \"Wirtschaftlicher Nutzen\"\n-NICHT Wirtschaftlicher Nutzen: Wenn positive ökonomische Aspekte nur von zitierten Akteuren geäussert werden, die Artikelstimme diesen Frame aber nicht übernimmt -> \"0 – kein passender Frame\"\n\n",
+    "task_description": "Es wird eine Framinganalyse durchgeführt. Es sollen Schweizer Medienartikel im Kontext der Masseneinwanderungsinitiative 2014 codiert werden. Es soll der dominante Frame pro Artikel identifiziert werden. De zentrale Frage lautet: Wie stellt der Artikel selbst (Artikelstimme) das Thema Einwanderung dar?",
+    "output_requirements": "JSON-Format mit Felder: code, reasoning\n\ncode: die korrespondierende Zahl zum dominanten Frame, z.B. \"1\" für \"Wirtschaftliche Bedrohung\"\nreasoning: eine Chain-of-Thought Begründung für den ausgewählten code"
+  },
+  "prompt_events": [
+    {
+      "type": "inputs_locked",
+      "at": "2026-03-11 09:00:07"
+    },
+    {
+      "type": "generate_request",
+      "at": "2026-03-11 09:00:11"
+    },
+    {
+      "type": "generate_result",
+      "at": "2026-03-11 09:00:18",
+      "new_prompt_key": "v01"
+    },
+    {
+      "type": "optimize_request",
+      "at": "2026-03-11 09:10:24",
+      "feedback": "Ergänze eine klare Regel: Wenn ein Artikel lediglich gegensätzliche Meinungen, Debatten oder Konflikte zwischen Akteuren berichtet, ohne selbst eine Position zu vertreten oder zu unterstützen, muss code 0 vergeben werden. \n\nDas reasoning muss stärker zwischen folgendem unterscheiden: \n1. Der Artikel unterstützt oder vertritt explizit eine Position: code = 1 oder 2\n2. Der Artikel berichtet nur über unterschiedliche Positionen: code = 0",
+      "rationale": "Drei Fehlcodierungen: Frame 0 wird nicht korrekt erkannt. Artikel mit Streitgesprächen oder Auflistungen von Vor- und Nachteilen werden fälschlicherweise einem Frame (1 oder 2) zugewiesen.",
+      "base_prompt_key": "v01"
+    },
+    {
+      "type": "optimize_result",
+      "at": "2026-03-11 09:10:28",
+      "new_prompt_key": "v02"
+    },
+    {
+      "type": "optimize_request",
+      "at": "2026-03-11 09:13:15",
+      "feedback": "Passe das Beispiel für die Ausgabe an: es soll durch ein Beispiel ersetzt werden, in dem der Artikel nur verschiedene Positionen darstellt und daher korrekt mit code 0 codiert wird",
+      "rationale": "Beispiel für die Ausgabe anpassen auf ein 0-Frame",
+      "base_prompt_key": "v02"
+    },
+    {
+      "type": "optimize_result",
+      "at": "2026-03-11 09:13:21",
+      "new_prompt_key": "v03"
+    },
+    {
+      "type": "optimize_request",
+      "at": "2026-03-11 09:22:20",
+      "feedback": "Mache in der Prompt klar: Wenn ein Artikel Positionen von Akteuren (Interviews oder Zitate) oder unterschiedliche wissenschaftliche Befunde darstellt, ohne selbst eine explizite Bewertung oder Schlussfolgerung zu übernehmen, darf kein Frame vergeben werden. Dann ist Code 0 zu vergeben.\n\nDas reasoning soll ausdrücklich prüfen, ob der Frame von der Artikelstimme selbst vertreten wird, oder nur von zitierten Akteuren oder Studien. Nur wenn ein Artikel selbst eine Position übernimmt, darf ein Frame codiert werden",
+      "rationale": "Immer noch zwei Fehlcodierungen: LLM erkennt richtigerweise Argumente im Text aber interpretiert sie dann als Position des Artikels, obwohl nur zitiert.",
+      "base_prompt_key": "v03"
+    },
+    {
+      "type": "optimize_result",
+      "at": "2026-03-11 09:22:25",
+      "new_prompt_key": "v04"
+    },
+    {
+      "type": "optimize_request",
+      "at": "2026-03-11 09:30:04",
+      "feedback": "Ergänze eine explizite Entscheidungsregel: zuerst muss geprüft werden, ob der Artikel selbst eine klare Bewertung oder Schlussfolgerung zur Einwanderung formuliert. Wenn der Artikel nur Positionen von Akteuren, Interviews oder Studien vorlegt, ohne die Position zu übernehmen, muss code 0 vergeben werden.\n\nDas reasoning muss nach folgenden Schritten vorgehen:\n1. Prüfen, ob der Artikel selbst eine Bewertung oder Rahmung der Einwanderung vornimmt.\n2. Wenn der Artikel nur Positionen von Akteuren oder Studien berichtet : code 0\n3. Nur wenn die Artikelstimme selbst eine klare Bewertung übernimmt, darf ein Frame (1 oder 2) vergeben werden",
+      "rationale": "Zwei Fehlcodierungen bleiben. Der Artikel schliesst immer noch von einem Argument/einer Textstelle auf Frame. -> Versuchen, über Schritt-für-Schritt Prüfung zu erst zu prüfen OB der Artikel eine Bewertung enthält und dann erst welche.",
+      "base_prompt_key": "v04"
+    },
+    {
+      "type": "optimize_result",
+      "at": "2026-03-11 09:30:10",
+      "new_prompt_key": "v05"
+    }
+  ],
+  "subsample_events": [
+    {
+      "at": "2026-03-11 09:02:11",
+      "run_key": "run01",
+      "prompt_key": "v01",
+      "n_docs": 7,
+      "n_success": 7,
+      "accuracy": 0.5714
+    },
+    {
+      "at": "2026-03-11 09:14:08",
+      "run_key": "run02",
+      "prompt_key": "v03",
+      "n_docs": 7,
+      "n_success": 7,
+      "accuracy": 0.7143
+    },
+    {
+      "at": "2026-03-11 09:23:12",
+      "run_key": "run03",
+      "prompt_key": "v04",
+      "n_docs": 7,
+      "n_success": 7,
+      "accuracy": 0.7143
+    },
+    {
+      "at": "2026-03-11 09:30:53",
+      "run_key": "run04",
+      "prompt_key": "v05",
+      "n_docs": 7,
+      "n_success": 6,
+      "accuracy": 0.5714
+    },
+    {
+      "at": "2026-03-11 09:32:39",
+      "run_key": "run05",
+      "prompt_key": "v05",
+      "n_docs": 7,
+      "n_success": 6,
+      "accuracy": 0.5714
+    }
+  ],
+  "batch_events": [
+    {
+      "at": "2026-03-11 09:40:40",
+      "run_key": "batch01",
+      "prompt_key": "v04",
+      "n_docs": 70,
+      "n_success": 69
+    }
+  ]
+}

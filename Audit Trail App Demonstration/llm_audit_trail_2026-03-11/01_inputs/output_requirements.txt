@@ -1,0 +1,4 @@
+JSON-Format mit Felder: code, reasoning
+
+code: die korrespondierende Zahl zum dominanten Frame, z.B. "1" für "Wirtschaftliche Bedrohung"
+reasoning: eine Chain-of-Thought Begründung für den ausgewählten code

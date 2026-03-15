@@ -1,0 +1,43 @@
+Codebook: Framing-Analyse Schweizer Medienberichterstattung zu Migration
+
+
+Allgemeine Codierregeln:
+
+-Definition «Frame»: Mit Frame ist die übergreifende Perspektive oder Rahmung, durch die ein Artikel das Thema Migration oder MigrantInnen selbst darstellt, gemeint. Der Frame zeigt sich durch die Auswahl von Argumenten und Akteuren, die Betonung bestimmter Aspekte und die implizite oder explizite Bewertung von Migration.
+
+-Dominanter Frame: Codiere den Frame, den der Artikel als Narrativ übernimmt. Wenn der Artikel rein deskriptiv oder analytisch ist, oder zwei Frames gleich stark aufgreift, codiere "0" - kein passender Frame.
+
+-Bei Unsicherheit: Wenn kein Frame eindeutig zutrifft: codiere «0» - kein passender Frame
+
+-Umgang mit Mehrfachframes: Wenn ein Artikel zwei Frames gleich stark betont, codiere "0" - kein passender Frame 
+
+-Artikelstimme vs. zitierte Positionen: Es soll explizit die Perspektive des Artikels codiert werden, nicht nur zitierte Akteure.
+
+ 
+Frame-Definitionen:
+
+1. Wirtschaftliche Bedrohung
+
+Definition: Migration wird als Belastung für die Wirtschaft, den Arbeitsmarkt oder den Wohlfahrtsstaat dargestellt. Der Frame betont negative ökonomische Folgen von Migration, wie Kosten, Konkurrenzen oder Überlastung sozialer Systeme.
+Typische Argumente:
+-Migration führt zu höheren Kosten (Sozialausgaben, Gesundheitssystem, Bildung)
+-Migranten konkurrieren mit Einheimischen um Arbeitsplätze, Verdrängung durch billigere Arbeitskräfte
+-Migration als Belastung für die Schweizer Wirtschaft, Überlastung des Wohlfahrtsstaats
+Ankerbeispiel: "Die Masseneinwanderung kostet Milliarden: Sozialausgaben steigen, während Schweizer Arbeitnehmer unter Lohndruck geraten."
+Abgrenzung:
+-NICHT Wirtschaftliche Bedrohung: Wenn ökonomische Aspekte neutral oder positiv dargestellt werden -> "Wirtschaftlicher Nutzen" oder "kein 	passender Frame"
+-NICHT Wirtschaftliche Bedrohung: Wenn der Artikel ökonomische Vor- und Nachteile gleichwertig darstellt -> "0 – kein passender Frame"
+
+2. Wirtschaftlicher Nutzen
+
+Definition: Migration wird als wirtschaftlich vorteilhaft oder notwendig dargestellt. Der Frame betont positive ökonomische Folgen von Migration für Wirtschaftswachstum, Fachkräfte oder Innovation.
+Typische Argumente:
+-Migranten füllen Lücken auf dem Arbeitsmarkt
+-Fachkräftemangel wird durch Einwanderung gelindert
+-Migration fördert Wirtschaftswachstum und Innovation
+Ankerbeispiel: "Die Schweizer Wirtschaft braucht Fachkräfte aus dem Ausland"
+Abgrenzung:
+-NICH Wirtschaftlicher Nutzen: Wenn ökonomische Aspekte negativ dargestellt werden -> "Wirtschaftlicher Nutzen"
+-NICHT Wirtschaftlicher Nutzen: Wenn positive ökonomische Aspekte nur von zitierten Akteuren geäussert werden, die Artikelstimme diesen Frame aber nicht übernimmt -> "0 – kein passender Frame"
+
+

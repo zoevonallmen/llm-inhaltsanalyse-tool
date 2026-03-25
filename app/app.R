@@ -4,13 +4,6 @@ library(jsonlite)
 library(shiny)
 library(shinythemes)
 library(here)
-#lade ich schon im classifier, reicht?
-# Dann würde es theoretisch reichen, wenn es aber wichtig für diesen Code ist, können
-# Sie es ruhig auch hier laden. Das macht im Grunde keinen Unterschied. Sofern Sie
-# alle Pakete immer zuerst laden, was Sie anscheinend im Sinne einer good practice tun -- super!
-#
-# Eine Alternative wäre, ein "globales" packages.R anzulegen und in alle Skripte zu laden.
-# Das kann Sinn machen, wenn es eben primär um diese App geht und führt Sie näher an die Paketentwicklung heran.
 
 ## LOAD KEY FUNCTIONS ----------------------------------------------------------
 source(here::here("R", "instructor.R"))
@@ -31,8 +24,10 @@ ui <- fluidPage(
         tags$summary(tags$b("1. Inputs")),
 
         fileInput("codebook_file", "Codebuch hochladen (.txt, .md)", accept = c(".txt", ".md")),
-        textAreaInput("task_description", "Aufgabenbeschrieb", rows = 3),
-        textAreaInput("output_requirements", "Outputanforderung", rows = 3),
+        textAreaInput("task_description", "Aufgabenbeschrieb", rows = 3,
+                      placeholder = "Forschungsziel und Klassifikationsaufgabe beschreiben"),
+        textAreaInput("output_requirements", "Outputanforderung", rows = 3,
+                      placeholder = "Outputformat spezifizieren (JSON mit Felder code und reasoning)"),
         actionButton("lock_inputs", "Inputs übernehmen"),
 
         tags$div(style="margin-top:8px; opacity:0.85;",
@@ -53,7 +48,7 @@ ui <- fluidPage(
         tags$hr(),
         tags$b("Feedback für Optimierung"),
         textAreaInput("optimizer_feedback", NULL, rows = 3,
-                      placeholder = "Feedback formulieren und dann 'Feedback übernehmen' klicken..."),
+                      placeholder = "Feedback für LLM formulieren"),
         actionButton("lock_feedback", "Feedback übernehmen"),
         actionButton("run_instructor_optimize", "Prompt optimieren"),
 
@@ -253,7 +248,7 @@ server <- function(input, output, session) {
 
   }
 
-  #Current_prompt holen für Optimizer
+  #Aktuelle Prompt für Prompt-Optimierung
   get_current_prompt <- function() {
     key <- current_prompt_key()
     req(key)
@@ -296,7 +291,7 @@ server <- function(input, output, session) {
     current_subsample_run_key(key)
   }
 
-  #Speicherung Batch Classifications
+  #Speicherung Batch Klassifikationen
   save_new_batch_run <- function(out_df, prompt_key) {
     n <- batch_run_n() + 1
     key <- sprintf("batch%02d", n)
@@ -313,7 +308,7 @@ server <- function(input, output, session) {
     current_batch_run_key(key)
   }
 
-  #Log Eintrag hinzufügen:
+  #Log Eintrag hinzufügen
   add_log_event <- function(section, entry) {
     log <- process_log()
     if (is.null(log[[section]])) log[[section]] <- list()
@@ -460,7 +455,7 @@ server <- function(input, output, session) {
 
   })
 
-  #Generate Prompt (XML an instructor)
+  #Generate Prompt (XML an Instructor Generate)
   observeEvent(input$run_instructor_generate, {
     comps <- prompt_components()
     req(comps)
@@ -554,7 +549,7 @@ server <- function(input, output, session) {
 
   })
 
-  #Dropdown für Prompt-Versionen
+  #Dropdown Prompt-Version für Klassifikation auswählen
   observe({
     versions <- prompt_versions()
     keys <- names(versions)
@@ -567,7 +562,7 @@ server <- function(input, output, session) {
     )
   })
 
-  #Dropdown für prompt_view
+  #Dropdown für prompt_to_view
   observe({
     versions <- prompt_versions()
     keys <- names(versions)
@@ -646,7 +641,7 @@ server <- function(input, output, session) {
   })
   
   
-  #Dropdown für subsample_run_view
+  #Dropdown für subsample_run_to_view
   observe({
     runs <- subsample_runs()
     keys <- names(runs)
@@ -724,7 +719,8 @@ server <- function(input, output, session) {
 
     out <- do.call(rbind, out_list)
 
-    acc <- mean(out$match, na.rm = TRUE)# Accuracy selbst berechnen (nur gültige Vergleiche zählen)
+    acc <- mean(out$match, na.rm = TRUE) # Accuracy selbst berechnen (nur gültige Vergleiche zählen)
+    
     n_success <- sum(!is.na(out$pred_code))
 
     save_new_subsample_run(out, prompt_key, acc)
@@ -740,7 +736,7 @@ server <- function(input, output, session) {
 
   })
 
-  #Dropdowns mit Spaltennamen befüllen Batch
+  #Dropdowns mit Spaltennamen befüllen Batch-CSV
   observeEvent(batch_df(), {
     df <- tryCatch(
       batch_df(),
@@ -770,7 +766,7 @@ server <- function(input, output, session) {
   })
 
 
-  #Full Batch Classify
+  #Full Batch Klassifikation
   observeEvent(input$run_classifier, {
     req(input$prompt_for_classifier)
     versions <- prompt_versions()
@@ -811,8 +807,6 @@ server <- function(input, output, session) {
           echo = "none"
         )
 
-        start_time <- Sys.time() #kann eigentlich jetzt raus?
-
         res <- tryCatch(
           classifier(
             article_text = article_text,
@@ -824,7 +818,6 @@ server <- function(input, output, session) {
           )
         )
 
-        end_time <- Sys.time() #raus?
 
         data.frame(
           doc_id = doc_id,
@@ -852,7 +845,7 @@ server <- function(input, output, session) {
 
   # OUTPUTS --------------------------------------------------------------------
 
-  # Anzeige übernommene Inputs für User 
+  # Anzeige übernommene Inputmaterialien (Mainpanel Status & Preview)
   output$active_inputs <- renderText({
     comps <- prompt_components()
     if(is.null(comps)) return("Noch keine Inputs übernommen.")
@@ -864,7 +857,7 @@ server <- function(input, output, session) {
     )
   })
 
-  #Prompt anzeigen für gewälte Version
+  # Generierte Prompt anzeigen für gewählte Version (Mainpanel Prompts)
   output$prompt_view <- renderText({
     versions <- prompt_versions()
     if (length(versions) == 0) return("Noch kein Prompt generiert.")
@@ -881,14 +874,14 @@ server <- function(input, output, session) {
     )
   })
 
-  # Anzeige uploaded Subsample 
+  # Anzeige hochgeladenes Subsample (Mainpanel Preview, die ersten 3 Zeilen)
   output$subsample_table <- renderTable({
     df <- active_subsample()
     if (is.null(df)) return(data.frame(Status = "Noch kein Subsample übernommen."))
     head(df, 3)
   })
 
-  # Anzeigen Output Summary für Subsample
+  # Anzeigen Output Summary für Subsample (Mainpanel Subsample)
   output$eval_vitals_summary <- renderText({
     runs <- subsample_runs()
     if (length(runs) == 0) return("Noch keine Subsample Evaluation durchgeführt.")
@@ -913,7 +906,7 @@ server <- function(input, output, session) {
     )
   })
 
-  # Anzeigen Output Tabelle für Subsample
+  # Anzeigen Output Tabelle für Subsample (Mainpanel Subsample)
   output$eval_vitals_table <- renderTable({
     runs <- subsample_runs()
     if (length(runs) == 0) return(NULL)
@@ -943,7 +936,7 @@ server <- function(input, output, session) {
     df[, c("doc_id", "manual_code", "pred_code", "match", "reasoning", "content")]
   })
 
-  # Output Classifier Resultat
+  # Output Classifier Resultat (Mainpanel Preview)
   output$classifier_output <- renderText({
     df <- classifier_results()
     if (is.null(df)) return("Noch keine Klassifikation durchgeführt.")
@@ -967,7 +960,7 @@ server <- function(input, output, session) {
   })
 
 
-  # Export Randomsample
+  # Export gezogenes Zufallsample
   output$download_subsample_template <- downloadHandler(
     filename = function() {
       paste0("subsample_template_", ".csv")
@@ -983,14 +976,15 @@ server <- function(input, output, session) {
     }
   )
   
-  #Anzeige Preview uploaded CSV for Batch
+  # Anzeige hochgeladenes Batch-CSV (Preview, die ersten drei Zeilen)
   output$batch_input_preview <- renderTable({
-    df <- tryCatch(docs_list(), error = function(e) NULL)
+    df <- tryCatch(batch_df(), error = function(e) NULL)
     if (is.null(df)) return(data.frame(Status = "Noch kein Datensatz geladen."))
     head(df, 3)
   })
 
-  # STATUS
+  # STATUS ANZEIGEN (Sidebar)
+  
   # Status: Inputs übernommen?
   output$status_inputs_locked <- renderText({
     comps <- prompt_components()
@@ -1005,7 +999,7 @@ server <- function(input, output, session) {
     else "Feedback übernommen (bereit für Optimierung)"
   })
   
-  #Status: Begründung gespeichert?
+  # Status: Begründung gespeichert?
   output$status_rationale_locked <- renderText({
     r <- locked_rationale()
     if (is.null(r) || !nzchar(trimws(r))) "Begründung noch nicht gespeichert"
@@ -1026,7 +1020,7 @@ server <- function(input, output, session) {
     else paste0("Subsample gezogen (n = ", nrow(df), ") – Export möglich")
   })
 
-  # status output prompt for classify
+  # Status: welche Prompt-Version für Klassifikation ausgewählt?
   output$status_prompt_for_classifier <- renderText({
     v <- prompt_versions()
     if (length(v) == 0) return("Noch keine Prompt-Version vorhanden (erst generieren).")
@@ -1036,7 +1030,8 @@ server <- function(input, output, session) {
     else paste0("Ausgewählt: ", sel)
   })
 
-  # EXPORT ZIP
+  # EXPORT ZIP/AUDIT TRAIL -----------------------------------------------------
+  
   output$download_audit_zip <- downloadHandler(
     filename = function() {
       paste0("llm_audit_trail_", Sys.Date(), ".zip")
@@ -1106,22 +1101,22 @@ server <- function(input, output, session) {
         auto_unbox = TRUE
       )
 
-      # inputs
+      # INPUTMATERIALIEN
       writeLines(log$inputs$codebook, file.path(dir_inputs, "codebook.txt"), useBytes = TRUE)
       writeLines(as.character(log$inputs$task_description), file.path(dir_inputs, "task_description.txt"), useBytes = TRUE)
       writeLines(as.character(log$inputs$output_requirements), file.path(dir_inputs, "output_requirements.txt"), useBytes = TRUE)
 
-      # prompt versionen
+      # GENERIERTE PROMPTS (alle Versionen)
       pv <- prompt_versions()
       for (k in names(pv)) {
         writeLines(as.character(pv[[k]]), file.path(dir_prompts, paste0("prompt_", k, ".txt")), useBytes = TRUE)
       }
 
-      #Events/history
+      # EVENTS
       jsonlite::write_json(log, file.path(dir_events, "events.json"),
                            pretty = TRUE, auto_unbox = TRUE)
 
-      #subsample runs/eval
+      # SUBSAMPLE RUNS/EVALUATIONS
       sr <- subsample_runs()
       if (length(sr) > 0) {
         for (rk in names(sr)) {
@@ -1131,7 +1126,7 @@ server <- function(input, output, session) {
         }
       }
 
-      #batch resultate
+      # BATCH RESULTS
       br <- batch_runs()
       if (length(br) > 0) {
         for (rk in names(br)) {
@@ -1141,7 +1136,7 @@ server <- function(input, output, session) {
         }
       }
 
-      #ZIP
+      # ZIP
       old <- getwd()
       setwd(root)
       on.exit(setwd(old), add = TRUE)

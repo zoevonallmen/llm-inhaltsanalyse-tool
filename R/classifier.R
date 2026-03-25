@@ -40,6 +40,7 @@ hf_model <- ellmer::chat_huggingface(
 
 
 #Helper Function (extract_json)-------------------------------------------------
+
 extract_json <- function(x) {
   if (is.null(x) || length(x) == 0) return(NULL)
 
@@ -105,8 +106,6 @@ classifier <- function(article_text, prompt, chat_object = hf_model,
       error = "JSON parsing failed"
     ))
   }
-  # TIPP: Ein else {} brauchen Sie hier nicht. Wenn die if-Bedingung vorher erfüllt ist,
-  # wird die dortige Liste zurückgegeben, falls nicht diese. So wird Ihr Code klarer und einfacher zu managen.
 
   return(list(
     success   = TRUE,
@@ -117,7 +116,7 @@ classifier <- function(article_text, prompt, chat_object = hf_model,
     error     = NULL
   ))
 
-  } # TIPP: Gleiches Prinzip. Ein else ist nicht nötig, da es ja zuvor ein return() gibt.
+  }
 
    message(paste0("Fehler", attempt, "/", max_attempts, ". Retry in ", sleep_sec, " Sekunden"))
    Sys.sleep(sleep_sec)
@@ -143,4 +142,3 @@ CLASSIFIER_PARAMS <- list(
   max_tokens  = 300,
   seed        = 24
 )
-

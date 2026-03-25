@@ -3,11 +3,10 @@
 library(jsonlite)
 library(shiny)
 library(shinythemes)
-library(here)
 
 ## LOAD KEY FUNCTIONS ----------------------------------------------------------
-source(here::here("R", "instructor.R"))
-source(here::here("R", "classifier.R"))
+source("R/instructor.R")
+source("R/classifier.R")
 
 ## UI --------------------------------------------------------------------------
 

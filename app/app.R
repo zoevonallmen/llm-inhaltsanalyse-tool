@@ -5,8 +5,8 @@ library(shiny)
 library(shinythemes)
 
 ## LOAD KEY FUNCTIONS ----------------------------------------------------------
-source("R/instructor.R")
-source("R/classifier.R")
+source(here::here("R", "instructor.R"))
+source(here::here("R", "classifier.R"))
 
 ## UI --------------------------------------------------------------------------
 

@@ -9,7 +9,7 @@ Dieses Projekt implementiert einen **Human-in-the-Loop Agentic Workflow** zur (q
 Der Analyseprozess wird in funktional spezialisierte Rollen aufgeteilt:
 
 | Agent | Aufgabe |
-|----|----|
+|------------------------------------|------------------------------------|
 | Instructor | Generierung und Optimierung von Prompts |
 | Classifier | Klassifikation der Texte |
 | Menschliche Forschende | Definition der Analyseaufgabe, Evaluation und Validierung |
@@ -140,7 +140,7 @@ Jedes Dokument wird unabhängig verarbeitet.
 
 ### 5 Export / Audit Trail
 
-Der gesamte Analyseprozess kann als Archiv exportiert werden.
+Der gesamte Analyseprozess kann als ZIP Fileexportiert werden.
 
 Der Export enthält unter anderem:
 
